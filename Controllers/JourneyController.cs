@@ -31,9 +31,11 @@ namespace ObiletJourneySearch.Controllers
         /// </summary>
         /// <param name="originId">Origin location ID</param>
         /// <param name="destinationId">Destination location ID</param>
+        /// <param name="originName">Origin location name</param>
+        /// <param name="destinationName">Destination location name</param>
         /// <param name="departureDate">Departure date</param>
         /// <returns>Journey results view</returns>
-        public async Task<IActionResult> Index(int originId, int destinationId, string departureDate)
+        public async Task<IActionResult> Index(int originId, int destinationId, string originName, string destinationName, string Date)
         {
             try
             {
@@ -59,13 +61,14 @@ namespace ObiletJourneySearch.Controllers
                     });
                 }
 
-                // Get bus location names
-                var originName = await GetLocationNameById(session, originId);
-                var destinationName = await GetLocationNameById(session, destinationId);
+                // Use location names passed from the form
+                // If names are not provided, use empty strings (should not happen with proper form submission)
+                originName = string.IsNullOrEmpty(originName) ? "Unknown Location" : originName;
+                destinationName = string.IsNullOrEmpty(destinationName) ? "Unknown Location" : destinationName;
 
-                if (!DateTime.TryParse(departureDate, out var parsedDepartureDate))
+                if (!DateTime.TryParse(Date, out var parsedDepartureDate))
                 {
-                    _logger.LogWarning("Invalid departure date format: {DepartureDate}. Defaulting to tomorrow.", departureDate);
+                    _logger.LogWarning("Invalid departure date format: {DepartureDate}. Defaulting to tomorrow.", Date);
                     parsedDepartureDate = DateTime.Now.AddDays(1).Date;
                 }
                 

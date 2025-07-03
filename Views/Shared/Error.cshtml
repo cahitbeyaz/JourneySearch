@@ -1,6 +1,33 @@
 @model ErrorViewModel
 @{
     ViewData["Title"] = "Error";
+    var statusCode = Context.Response.StatusCode;
+    var errorTitle = "Error";
+    var errorMessage = Model.ErrorMessage;
+    
+    // Set default error messages based on status code
+    if (string.IsNullOrEmpty(errorMessage))
+    {
+        switch (statusCode)
+        {
+            case 404:
+                errorTitle = "Page Not Found";
+                errorMessage = "The page you are looking for does not exist or might have been moved.";
+                break;
+            case 403:
+                errorTitle = "Access Denied";
+                errorMessage = "You do not have permission to access this resource.";
+                break;
+            case 500:
+                errorTitle = "Server Error";
+                errorMessage = "An error occurred while processing your request. Please try again later.";
+                break;
+            default:
+                errorTitle = "Error";
+                errorMessage = "An unexpected error occurred while processing your request.";
+                break;
+        }
+    }
 }
 
 <div class="container mt-4">
@@ -8,20 +35,24 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-danger text-white">
-                    <h2><i class="bi bi-exclamation-triangle"></i> Error</h2>
+                    <h2><i class="bi bi-exclamation-triangle"></i> @errorTitle</h2>
+                    @if (statusCode != 200)
+                    {
+                        <span class="badge bg-warning text-dark">Error @statusCode</span>
+                    }
                 </div>
                 <div class="card-body">
-                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                    {
-                        <div class="alert alert-danger">
-                            <h4>@Model.ErrorMessage</h4>
-                        </div>
-                    }
-                    else
-                    {
-                        <h4 class="text-danger">An error occurred while processing your request.</h4>
-                    }
-                    <p>Please try again or contact support if the problem persists.</p>
+                    <div class="alert alert-danger">
+                        <h4>@errorMessage</h4>
+                    </div>
+                    
+                    <p>Please try one of the following:</p>
+                    <ul>
+                        <li>Go back to the <a href="@Url.Action("Index", "Home")" class="text-primary">homepage</a> and try again</li>
+                        <li>Check your network connection</li>
+                        <li>Try clearing your browser cache and cookies</li>
+                        <li>If the problem persists, please contact support</li>
+                    </ul>
 
                     @if (Model.ShowRequestId)
                     {

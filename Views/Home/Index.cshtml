@@ -1,11 +1,16 @@
 @model ObiletJourneySearch.Models.ViewModels.SearchViewModel
 @{
-    ViewData["Title"] = "Bus Journey Search";
+    ViewData["Title"] = "Otobüs Seyahati Arama";
 }
 
 @section Styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
     <style>
+        /* Loading button styles */
+        #searchButton:disabled {
+            opacity: 0.85;
+            cursor: not-allowed;
+        }
         .card {
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -116,23 +121,22 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h2>Find Your Bus Journey</h2>
                 </div>
-                <div class="card-body p-4">
-                    <form asp-controller="Home" asp-action="Search" method="post">
+                <div class="card-body pt-0">
+                    <form asp-controller="Journey" asp-action="Index" method="get">
                         <!-- From (Origin) Field -->
                         <div class="mb-2">
                             <div class="location-label">Nereden</div>
                             <div class="field-with-icon">
                                 <i class="bi bi-geo-alt field-icon"></i>
-                                <input type="hidden" id="originSearchInput" name="SearchOrigin" asp-for="SearchOrigin" />
-                                <select id="originSelect" asp-for="OriginId" class="search-select" style="width: 100%">
-                                    @if (Model.OriginId.HasValue && !string.IsNullOrEmpty(Model.OriginName))
+                                <select id="originSelect" name="originId" class="form-select" required>
+                                    <option value="">Kalkış Yeri Seçin</option>
+                                    @if (Model != null && Model.OriginId > 0)
                                     {
                                         <option value="@Model.OriginId" selected>@Model.OriginName</option>
                                     }
                                 </select>
-                                <span asp-validation-for="OriginId" class="text-danger"></span>
+                                <input type="hidden" id="originName" name="originName" value="@(Model != null ? Model.OriginName : "")" />
                             </div>
                         </div>
                         
@@ -156,6 +160,7 @@
                                         <option value="@Model.DestinationId" selected>@Model.DestinationName</option>
                                     }
                                 </select>
+                                <input type="hidden" id="destinationName" name="destinationName" value="@(Model.DestinationName ?? "")" />
                                 <span asp-validation-for="DestinationId" class="text-danger"></span>
                             </div>
                         </div>
@@ -170,10 +175,10 @@
                             </div>
                             <div class="date-buttons">
                                 <div class="d-flex">
-                                    <button type="submit" class="btn btn-sm me-1 w-50" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Today">
+                                    <button type="button" id="todayBtn" class="btn btn-sm me-1 w-50">
                                         Bugün
                                     </button>
-                                    <button type="submit" class="btn btn-sm ms-1 w-50" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Tomorrow">
+                                    <button type="button" id="tomorrowBtn" class="btn btn-sm ms-1 w-50">
                                         Yarın
                                     </button>
                                 </div>
@@ -182,7 +187,10 @@
 
                         <!-- Search Button -->
                         <div class="mt-4">
-                            <button type="submit" class="btn btn-primary search-button w-100">Bileti Bul</button>
+                            <button id="searchButton" type="submit" class="btn btn-primary search-button w-100">
+                                <span class="button-text">Bileti Bul</span>
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -286,6 +294,7 @@
             $('#originSelect').on('select2:select', function(e) {
                 localStorage.setItem('obilet_originId', e.params.data.id);
                 localStorage.setItem('obilet_originName', e.params.data.text);
+                $('#originName').val(e.params.data.text); // Update hidden input
             });
             
             // Clear saved origin on clearing the selection
@@ -305,6 +314,7 @@
             $('#destinationSelect').on('select2:select', function(e) {
                 localStorage.setItem('obilet_destinationId', e.params.data.id);
                 localStorage.setItem('obilet_destinationName', e.params.data.text);
+                $('#destinationName').val(e.params.data.text); // Update hidden input
             });
             
             // Clear saved destination on clearing the selection
@@ -316,6 +326,21 @@
             // Save date when changed
             $('#Date').change(function() {
                 localStorage.setItem('obilet_date', $(this).val());
+            });
+            
+            // Handle Today button click
+            $('#todayBtn').click(function() {
+                const today = new Date();
+                const formattedDate = today.toISOString().split('T')[0];
+                $('#Date').val(formattedDate).trigger('change');
+            });
+            
+            // Handle Tomorrow button click
+            $('#tomorrowBtn').click(function() {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const formattedDate = tomorrow.toISOString().split('T')[0];
+                $('#Date').val(formattedDate).trigger('change');
             });
 
             // Handle swap button click
@@ -337,18 +362,20 @@
                     var newOriginOption = new Option(destinationText, destinationId, true, true);
                     $('#originSelect').append(newOriginOption).trigger('change');
                     
-                    // Update localStorage after swap
+                    // Update localStorage and hidden field after swap
                     localStorage.setItem('obilet_originId', destinationId);
                     localStorage.setItem('obilet_originName', destinationText);
+                    $('#originName').val(destinationText); // Update hidden input field
                 }
 
                 if (originId) {
                     var newDestinationOption = new Option(originText, originId, true, true);
                     $('#destinationSelect').append(newDestinationOption).trigger('change');
                     
-                    // Update localStorage after swap
+                    // Update localStorage and hidden field after swap
                     localStorage.setItem('obilet_destinationId', originId);
                     localStorage.setItem('obilet_destinationName', originText);
+                    $('#destinationName').val(originText); // Update hidden input field
                 }
 
                 // Add a brief animation effect
@@ -365,12 +392,16 @@
                 const date = $('#Date').val();
                 const originText = $('#originSelect option:selected').text();
                 const destinationText = $('#destinationSelect option:selected').text();
+                
+                // Always update hidden fields with current selected text before submitting
+                $('#originName').val(originText);
+                $('#destinationName').val(destinationText);
 
                 // Only validate when both fields have values
                 if (origin && destination && origin === destination) {
                     // Show inline error message instead of alert
                     if ($('#location-error').length === 0) {
-                        $('<div id="location-error" class="text-danger mt-2">Origin and destination cannot be the same location</div>')
+                        $('<div id="location-error" class="text-danger mt-2">Kalkış ve varış yeri aynı olamaz</div>')
                             .insertAfter('#destinationSelect');
                     }
                     e.preventDefault();
@@ -385,6 +416,12 @@
                     if (destination) localStorage.setItem('obilet_destinationId', destination);
                     if (destinationText) localStorage.setItem('obilet_destinationName', destinationText);
                     if (date) localStorage.setItem('obilet_date', date);
+                    
+                    // Show loading indicator and disable button
+                    const searchButton = $('#searchButton');
+                    searchButton.prop('disabled', true);
+                    searchButton.find('.spinner-border').removeClass('d-none');
+                    searchButton.find('.button-text').text('Aranıyor...');
                 }
             });
         });

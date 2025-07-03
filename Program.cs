@@ -24,10 +24,16 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+else
+{
+    // In development, we'll see detailed error information
+    app.UseDeveloperExceptionPage();
+}
+
+// Register global exception handler middleware
+app.UseMiddleware<ObiletJourneySearch.Middleware.ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

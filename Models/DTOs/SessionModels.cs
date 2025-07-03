@@ -5,7 +5,7 @@ namespace ObiletJourneySearch.Models.DTOs
     public class SessionRequest
     {
         [JsonPropertyName("type")]
-        public int Type { get; set; } = 7; // Device type specific for distribusion api client
+        public int Type { get; set; } 
 
         [JsonPropertyName("connection")]
         public Connection Connection { get; set; }
@@ -13,8 +13,6 @@ namespace ObiletJourneySearch.Models.DTOs
         [JsonPropertyName("browser")]
         public Browser Browser { get; set; }
 
-        [JsonPropertyName("application")]
-        public Application Application { get; set; }
     }
 
     public class Connection
@@ -33,15 +31,6 @@ namespace ObiletJourneySearch.Models.DTOs
         
         [JsonPropertyName("version")]
         public string Version { get; set; }
-    }
-
-    public class Application
-    {
-        [JsonPropertyName("version")]
-        public string Version { get; set; } = "1.0.0.0";
-
-        [JsonPropertyName("equipment-id")]
-        public string EquipmentId { get; set; } = "distribusion";
     }
 
     public class SessionResponse

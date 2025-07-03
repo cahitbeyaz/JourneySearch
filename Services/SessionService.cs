@@ -99,12 +99,7 @@ namespace ObiletJourneySearch.Services
                     IpAddress = _httpContextAccessor?.HttpContext?.Connection?.RemoteIpAddress?.ToString(),
                     Port = _httpContextAccessor?.HttpContext?.Connection?.RemotePort.ToString()
                 },
-                Browser = GetBrowserInfo(),
-                Application = new Application
-                {
-                    Version = "1.0.0.0",
-                    EquipmentId = "distribusion"
-                }
+                Browser = GetBrowserInfo()
             };
         }
         

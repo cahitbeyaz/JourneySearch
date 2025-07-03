@@ -1,0 +1,96 @@
+# Obilet Journey Search
+
+An ASP.NET Core MVC application for searching and booking bus journeys across Turkey using the Obilet.com API.
+
+## Overview
+
+This application provides a user-friendly interface for searching bus journeys between locations in Turkey. Users can select origin and destination locations from a searchable dropdown, choose a departure date, and view available journeys with pricing and details.
+
+## Features
+
+### Core Functionality
+- **Bus Location Search**: Text-based search for origin and destination locations
+- **Journey Search**: Find available journeys between selected locations on a specific date
+- **Journey Results**: View comprehensive journey details including:
+  - Departure and arrival times
+  - Price information (formatted to two decimal places)
+  - Available seats
+  - Journey duration
+  - Bus features and amenities
+  - Bus company information
+
+### User Experience
+- **Modern UI Design**: Clean, responsive card-based layout matching the reference design
+- **Persistent Search Parameters**: Last searched locations and dates are remembered using localStorage
+- **Quick Date Selection**: "Today" and "Tomorrow" buttons for rapid date selection
+- **Location Swapping**: Convenient button to swap origin and destination
+- **Expandable Result Cards**: Click to expand journey cards for more details
+- **Loading Indicators**: Visual feedback during search operations
+- **Input Validation**: Prevents selecting same origin and destination
+
+### Error Handling and Reliability
+- **Global Error Handling**: Centralized error management via middleware
+- **User-Friendly Error Messages**: Clear, actionable error information
+- **Status Code Support**: Different error types handled appropriately
+- **Session Management**: Robust session handling for API authentication
+
+## Additional Enhancements
+
+- **Comprehensive Session Management**: Maintains device sessions for each user via ASP.NET Core session storage
+- **Direct Location Name Transfer**: Passing location names directly between search and results pages for performance optimization
+- **Responsive Design**: Mobile-friendly layout with appropriate spacing and sizing
+- **Fixed Price Formatting**: Consistent display of prices with exact two decimal places
+- **Fixed-Width Price Containers**: Price containers sized to handle 5 digits, comma, and two decimal places
+- **AJAX-Powered Dropdowns**: Fast, responsive location search with Select2
+- **Development/Production Environment Detection**: Different error detail levels based on environment
+
+## Technologies Used
+
+- **Framework**: ASP.NET Core MVC
+- **Frontend**: Bootstrap 5, jQuery, Select2, Bootstrap Icons
+- **API Integration**: Obilet.com Business API
+- **Session Management**: ASP.NET Core Session with JSON serialization
+- **Error Handling**: Custom middleware and MVC error pages
+- **State Management**: LocalStorage for client-side persistence
+
+## Setup and Configuration
+
+### Prerequisites
+- .NET 6.0 SDK or newer
+- Visual Studio 2022 or Visual Studio Code with C# extensions
+
+### Configuration
+The application uses the following configuration settings:
+
+```json
+{
+  "ObiletApi": {
+    "BaseUrl": "https://v2-api.obilet.com/api/",
+    "Token": "Your-API-Token",
+    "ClientType": 1,
+    "DeviceType": 7
+  }
+}
+```
+
+### Running the Application
+1. Clone the repository
+2. Update API configuration in `appsettings.json` with your Obilet API credentials
+3. Run the application using Visual Studio or `dotnet run` command
+
+## Usage
+
+1. Open the application in a web browser
+2. Enter or search for origin and destination locations
+3. Select a departure date using the date picker or quick buttons
+4. Click "Search" to find available journeys
+5. View journey results with times, prices, and bus information
+6. Click on a journey card to expand and see more details
+
+## Future Improvements
+
+- Distributed session storage (e.g., Redis) for multi-instance deployments
+- User authentication to link Obilet sessions across devices
+- Comprehensive testing (unit and integration tests)
+- Accessibility improvements
+- Centralized logging and monitoring

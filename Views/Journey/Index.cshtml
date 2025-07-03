@@ -1,90 +1,112 @@
 @model ObiletJourneySearch.Models.ViewModels.JourneyViewModel
 @{
-    ViewData["Title"] = "Available Journeys";
+    ViewData["Title"] = "Mevcut Seferler";
 }
 
-<div class="container journey-list-container mt-3">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <h3>
-                            <a href="@Url.Action("Index", "Home")" class="text-white text-decoration-none">
-                                <i class="bi bi-arrow-left"></i>
-                            </a>
-                            @Model.OriginName - @Model.DestinationName
-                        </h3>
-                        <p class="mb-0">@Model.DepartureDate.ToString("D")</p>
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card journey-card">
+                <div class="card-header text-white">
+                    <div class="d-flex align-items-center">
+                        <a href="@Url.Action("Index", "Home")" class="text-white text-decoration-none me-2">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h2 class="mb-1">@Model.OriginName - @Model.DestinationName</h2>
+                            <p class="mb-0">@Model.DepartureDate.ToString("dddd, d MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))</p>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
                     {
-                        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+                        <div class="alert alert-danger m-3">@ViewBag.ErrorMessage</div>
                     }
                     else if (Model.Journeys == null || !Model.Journeys.Any())
                     {
-                        <div class="alert alert-info">No journeys found for this route on the selected date.</div>
+                        <div class="alert alert-info m-3">Seçilen tarihte bu güzergah için sefer bulunamadı.</div>
                     }
                     else
                     {
-                        <div class="list-group">
+                        <div class="journey-list">
                             @foreach (var journey in Model.Journeys)
                             {
-                                <div class="list-group-item journey-item">
-                                    <div class="row">
-                                        <div class="col-md-3 d-flex flex-column justify-content-center">
-                                            <h5>@journey.JourneyDetail.Departure.ToString("HH:mm")</h5>
-                                            <div>@journey.OriginLocation</div>
-                                        </div>
-                                        <div class="col-md-3 d-flex flex-column justify-content-center">
-                                            <h5>@journey.JourneyDetail.Arrival.ToString("HH:mm")</h5>
-                                            <div>@journey.DestinationLocation</div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="row">
-                                                <div class="col-md-6 d-flex flex-column justify-content-center">
-                                                    <div class="d-flex align-items-center mb-2">
-                                                        <img src="https://s3.eu-central-1.amazonaws.com/static.obilet.com/images/partner/@(journey.PartnerId)-sm.png" 
-                                                             alt="@journey.PartnerName"
-                                                             style="max-height: 30px; max-width: 100px;" />
-                                                    </div>
-                                                    <div>@journey.BusType</div>
-                                                </div>
-                                                <div class="col-md-6 d-flex flex-column justify-content-center">
-                                                    <div class="text-nowrap mb-1">
-                                                        <span class="journey-feature">@journey.JourneyDetail.Duration</span>
-                                                    </div>
-                                                    <div>
-                                                        <span class="badge bg-light text-dark">@journey.AvailableSeats seats</span>
-                                                    </div>
-                                                </div>
+                                <div class="journey-item py-2 px-3 border-bottom" data-journey-id="@journey.Id">
+                                    <!-- Main Journey Info (Always Visible) -->
+                                    <div class="journey-summary" role="button">
+                                        <div class="row align-items-center">
+                                            <!-- Left: Times -->
+                                            <div class="col-3">
+                                                <span class="journey-time">@journey.JourneyDetail.Departure.ToString("HH:mm")</span>
+                                                <i class="bi bi-arrow-right small mx-1"></i>
+                                                <span class="journey-time">@journey.JourneyDetail.Arrival.ToString("HH:mm")</span>
                                             </div>
-                                        </div>
-                                        <div class="col-md-2 d-flex flex-column justify-content-center align-items-end">
-                                            <h4 class="text-primary mb-2">@journey.JourneyDetail.InternetPrice @journey.JourneyDetail.Currency</h4>
-                                            <a href="https://www.obilet.com/seferler/@Model.OriginId-@Model.DestinationId/@Model.DepartureDate.ToString("yyyy-MM-dd")/@journey.Id" 
-                                               target="_blank" 
-                                               class="btn btn-sm btn-outline-primary">
-                                                View Details
-                                            </a>
+
+                                            <!-- Middle: Location -->
+                                            <div class="col-4">
+                                                <div class="journey-stations small">@journey.OriginLocation - @journey.DestinationLocation</div>
+                                            </div>
+
+                                            <!-- Right: Price -->
+                                            <div class="col-5 text-end d-flex justify-content-end align-items-center">
+                                                <div class="journey-price-badge me-2">@journey.JourneyDetail.InternetPrice.ToString("N2") @journey.JourneyDetail.Currency</div>
+                                                <i class="bi bi-chevron-down journey-expand-icon"></i>
+                                            </div>
                                         </div>
                                     </div>
-                                    @if (journey.Features != null && journey.Features.Any())
-                                    {
-                                        <div class="row mt-2">
-                                            <div class="col-md-12">
-                                                <small class="text-muted">
-                                                    <strong>Features:</strong>
-                                                    @foreach (var feature in journey.Features)
-                                                    {
-                                                        <span class="badge bg-light text-dark me-1">@feature.Name</span>
-                                                    }
-                                                </small>
+
+                                    <!-- Extended Details (Hidden by Default) -->
+                                    <div class="journey-details mt-3" style="display: none;">
+                                        <hr class="my-2">
+
+                                        <!-- Bus Info Row -->
+                                        <div class="row mb-2">
+                                            <div class="col-6">
+                                                <div class="d-flex align-items-center">
+                                                    <img src="https://s3.eu-central-1.amazonaws.com/static.obilet.com/images/partner/@(journey.PartnerId)-sm.png"
+                                                         alt="@journey.PartnerName"
+                                                         class="partner-logo me-2" />
+                                                    <span>@journey.BusType</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-3 text-center">
+                                                <div class="small text-muted">Süre</div>
+                                                <div>@journey.JourneyDetail.Duration</div>
+                                            </div>
+                                            <div class="col-3 text-end">
+                                                <div class="small text-muted">Kalan Koltuk</div>
+                                                <div>@journey.AvailableSeats</div>
                                             </div>
                                         </div>
-                                    }
+
+                                        <!-- Features Row -->
+                                        @if (journey.Features != null && journey.Features.Any())
+                                        {
+                                            <div class="row mt-2">
+                                                <div class="col-12">
+                                                    <div class="small text-muted mb-1">Özellikler</div>
+                                                    <div class="journey-features">
+                                                        @foreach (var feature in journey.Features)
+                                                        {
+                                                            <span class="feature-badge">@feature.Name</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        <!-- Action Button -->
+                                        <div class="row mt-3">
+                                            <div class="col-12 text-end">
+                                                <a href="https://www.obilet.com/seferler/@Model.OriginId-@Model.DestinationId/@Model.DepartureDate.ToString("yyyy-MM-dd")/@journey.Id"
+                                                   target="_blank"
+                                                   class="btn btn-primary view-details-btn">
+                                                    Satın Al
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             }
                         </div>
@@ -97,17 +119,114 @@
 
 @section Styles {
     <style>
+        .journey-card {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: #0064ff;
+            padding: 1rem 1.5rem;
+            border-bottom: none;
+        }
+
         .journey-item {
-            margin-bottom: 10px;
             transition: all 0.2s;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
         }
-        
+
+            .journey-item:last-child {
+                border-bottom: none;
+            }
+
+        .journey-summary {
+            cursor: pointer;
+        }
+
         .journey-item:hover {
-            background-color: #f8f9fa;
+            background-color: rgba(0,100,255,0.03);
         }
-        
-        .journey-feature {
-            font-size: 0.9rem;
+
+        .journey-time {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #0064ff;
         }
+
+        .journey-stations {
+            color: #666;
+        }
+
+        .journey-price-badge {
+            background-color: #d9534f;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: 700;
+            display: inline-block;
+            min-width: 140px; /* Ensures space for 5 digits, comma, and 2 decimals */
+            text-align: center;
+        }
+
+        .journey-expand-icon {
+            transition: transform 0.3s ease;
+        }
+
+            .journey-expand-icon.expanded {
+                transform: rotate(180deg);
+            }
+
+        .partner-logo {
+            max-height: 24px;
+            max-width: 80px;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background-color: #f0f0f0;
+            color: #666;
+            padding: 2px 6px;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .journey-features {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .view-details-btn {
+            background-color: #0064ff;
+            border-color: #0064ff;
+            color: white;
+        }
+
+            .view-details-btn:hover {
+                background-color: #0058e2;
+            }
     </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Handle expandable journey items
+            $('.journey-summary').on('click', function() {
+                const journeyItem = $(this).closest('.journey-item');
+                const detailsSection = journeyItem.find('.journey-details');
+                const expandIcon = journeyItem.find('.journey-expand-icon');
+
+                // Toggle details section
+                detailsSection.slideToggle(200);
+                expandIcon.toggleClass('expanded');
+
+                // Toggle aria-expanded for accessibility
+                const isExpanded = expandIcon.hasClass('expanded');
+                $(this).attr('aria-expanded', isExpanded);
+            });
+        });
+    </script>
 }

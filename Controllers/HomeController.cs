@@ -239,11 +239,25 @@ public class HomeController : Controller
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    public IActionResult Error(int? code = null)
     {
-        return View(new ErrorViewModel { 
+        // Use the provided code or default to 500 (Internal Server Error)
+        var statusCode = code ?? 500;
+        
+        if (statusCode == 0)
+        {
+            // Default to 500 if no status code is specified
+            statusCode = 500;
+        }
+        
+        Response.StatusCode = statusCode;
+        
+        return View(new ErrorViewModel 
+        { 
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-            ErrorMessage = "An error occurred while processing your request. Please try again later."
+            StatusCode = statusCode,
+            // ErrorMessage will be set in the view based on status code if not provided
+            ErrorMessage = TempData["ErrorMessage"]?.ToString() 
         });
     }
 
