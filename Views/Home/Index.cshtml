@@ -228,9 +228,17 @@
             }
             // Initialize Select2 for origin field with AJAX search
             $('#originSelect').select2({
-                placeholder: "Search for origin location",
+                placeholder: "Kalkış yeri için ara",
                 allowClear: true,
-                minimumInputLength: 2,
+                minimumInputLength: 0,
+                language: {
+                    inputTooShort: function() {
+                        return "Lütfen en az 2 karakter girin";
+                    },
+                    noResults: function() {
+                        return "Sonuç bulunamadı";
+                    }
+                },
                 ajax: {
                     url: '@Url.Action("SearchOriginLocations", "Home")',
                     dataType: 'json',
@@ -256,9 +264,17 @@
 
             // Initialize Select2 for destination field with AJAX search
             $('#destinationSelect').select2({
-                placeholder: "Search for destination location",
+                placeholder: "Varış yeri için ara",
                 allowClear: true,
-                minimumInputLength: 2,
+                minimumInputLength: 0,
+                language: {
+                    inputTooShort: function() {
+                        return "Lütfen en az 2 karakter girin";
+                    },
+                    noResults: function() {
+                        return "Sonuç bulunamadı";
+                    }
+                },
                 ajax: {
                     url: '@Url.Action("SearchDestinationLocations", "Home")',
                     dataType: 'json',

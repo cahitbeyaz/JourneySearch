@@ -79,13 +79,14 @@ public class HomeController : Controller
 
             try
             {
-                // Get bus locations from API
+                // Get bus locations from API - when searchTerm is null, API returns initial list
                 var locationsRequest = new BusLocationRequest
                 {
+                    // Pass null data to get initial list of locations when searchTerm is null
                     Data = searchTerm,
                     DeviceSession = session,
                     Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    Language = "en-EN"
+                    Language = "tr-TR"
                 };
 
                 var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
