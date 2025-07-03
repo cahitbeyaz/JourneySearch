@@ -1,0 +1,97 @@
+@model ObiletJourneySearch.Models.ViewModels.SearchViewModel
+@{
+    ViewData["Title"] = "Bus Journey Search";
+}
+
+<div class="container journey-search-container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2>Find Your Bus Journey</h2>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Home" asp-action="Search" method="post">
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">From:</label>
+                            <div class="col-sm-9">
+                                <select asp-for="OriginId" class="form-control" asp-items="Model.LocationOptions">
+                                    <option value="">Select origin</option>
+                                </select>
+                                <span asp-validation-for="OriginId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row mb-3">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9 text-center">
+                                <button type="submit" class="btn btn-outline-primary btn-sm" formaction="@Url.Action("SwapLocations", "Home")" formmethod="post">
+                                    <i class="bi bi-arrow-down-up"></i> Swap
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">To:</label>
+                            <div class="col-sm-9">
+                                <select asp-for="DestinationId" class="form-control" asp-items="Model.LocationOptions">
+                                    <option value="">Select destination</option>
+                                </select>
+                                <span asp-validation-for="DestinationId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row mb-3">
+                            <label class="col-sm-3 col-form-label">Departure Date:</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <input asp-for="DepartureDate" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                    <div class="input-group-append" style="margin-left: 10px;">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary mr-1" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Today">
+                                            Today
+                                        </button>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Tomorrow">
+                                            Tomorrow
+                                        </button>
+                                    </div>
+                                </div>
+                                <span asp-validation-for="DepartureDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-sm-12 text-center">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">Search</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Set the origin and destination values if saved in model
+            const originId = '@Model.OriginId';
+            const destinationId = '@Model.DestinationId';
+            
+            if (originId) {
+                $('#OriginId').val(originId);
+            }
+            
+            if (destinationId) {
+                $('#DestinationId').val(destinationId);
+            }
+            
+            // Validate that origin and destination are different
+            $('form').submit(function(e) {
+                const origin = $('#OriginId').val();
+                const destination = $('#DestinationId').val();
+                
+                if (origin === destination && origin !== '' && destination !== '') {
+                    alert('Origin and destination cannot be the same location.');
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+}

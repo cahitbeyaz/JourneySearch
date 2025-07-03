@@ -1,0 +1,194 @@
+using Microsoft.AspNetCore.Mvc;
+using ObiletJourneySearch.ApiClient;
+using ObiletJourneySearch.Models;
+using ObiletJourneySearch.Models.DTOs;
+using ObiletJourneySearch.Models.ViewModels;
+using ObiletJourneySearch.Services;
+
+namespace ObiletJourneySearch.Controllers
+{
+    /// <summary>
+    /// Handles journey search results display and related operations.
+    /// </summary>
+    public class JourneyController : Controller
+    {
+        private readonly IObiletApiClient _apiClient;
+        private readonly ISessionService _sessionService;
+        private readonly ILogger<JourneyController> _logger;
+
+        public JourneyController(
+            IObiletApiClient apiClient,
+            ISessionService sessionService,
+            ILogger<JourneyController> logger)
+        {
+            _apiClient = apiClient;
+            _sessionService = sessionService;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Displays available journeys for the selected route and date.
+        /// </summary>
+        /// <param name="originId">Origin location ID</param>
+        /// <param name="destinationId">Destination location ID</param>
+        /// <param name="departureDate">Departure date</param>
+        /// <returns>Journey results view</returns>
+        public async Task<IActionResult> Index(int originId, int destinationId, string departureDate)
+        {
+            try
+            {
+                if (originId <= 0 || destinationId <= 0)
+                {
+                    _logger.LogWarning("Invalid location IDs provided: Origin={OriginId}, Destination={DestinationId}", originId, destinationId);
+                    return RedirectToAction("Index", "Home", new { errorMessage = "Invalid origin or destination selected." });
+                }
+
+                if (originId == destinationId)
+                {
+                    _logger.LogWarning("Origin and destination are the same: {LocationId}", originId);
+                    return RedirectToAction("Index", "Home", new { errorMessage = "Origin and destination cannot be the same location." });
+                }
+                
+                var session = await _sessionService.GetOrCreateSessionAsync();
+                if (session == null)
+                {
+                    _logger.LogError("Failed to create or retrieve session for journey search");
+                    return View("Error", new ErrorViewModel { 
+                        RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier, 
+                        ErrorMessage = "Failed to create session with the server. Please try again later."
+                    });
+                }
+
+                // Get bus location names
+                var originName = await GetLocationNameById(session, originId);
+                var destinationName = await GetLocationNameById(session, destinationId);
+
+                if (!DateTime.TryParse(departureDate, out var parsedDepartureDate))
+                {
+                    _logger.LogWarning("Invalid departure date format: {DepartureDate}. Defaulting to tomorrow.", departureDate);
+                    parsedDepartureDate = DateTime.Now.AddDays(1).Date;
+                }
+                
+                if (parsedDepartureDate.Date < DateTime.Now.Date)
+                {
+                    _logger.LogWarning("Past departure date provided: {DepartureDate}", parsedDepartureDate);
+                    parsedDepartureDate = DateTime.Now.Date;
+                    ViewBag.WarningMessage = "The selected date was in the past. Today's date has been used instead.";
+                }
+
+                var model = new JourneyViewModel
+                {
+                    OriginId = originId,
+                    DestinationId = destinationId,
+                    OriginName = originName,
+                    DestinationName = destinationName,
+                    DepartureDate = parsedDepartureDate
+                };
+
+                try
+                {
+                    var journeyRequest = new JourneyRequest
+                    {
+                        DeviceSession = session,
+                        Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                        Language = "en-EN",
+                        Data = new JourneyRequestData
+                        {
+                            OriginId = originId,
+                            DestinationId = destinationId,
+                            DepartureDate = parsedDepartureDate.ToString("yyyy-MM-dd")
+                        }
+                    };
+
+                    _logger.LogInformation("Requesting journeys: {Origin} to {Destination} on {Date}",
+                        originName, destinationName, parsedDepartureDate.ToString("yyyy-MM-dd"));
+                        
+                    var response = await _apiClient.GetBusJourneysAsync(journeyRequest);
+
+                    if (response.Status == "Success" && response.Data != null)
+                    {
+                        model.Journeys = response.Data
+                            .Where(j => j.IsActive)
+                            .OrderBy(j => j.JourneyDetail.Departure)
+                            .ToList();
+                            
+                        _logger.LogInformation("Found {Count} journeys for {Origin} to {Destination}",
+                            model.Journeys.Count, originName, destinationName);
+                    }
+                    else
+                    {
+                        _logger.LogError("Failed to get journeys. Status: {Status}, Message: {Message}",
+                            response.Status, response.Message ?? "No message");
+                        
+                        ViewBag.ErrorMessage = $"Failed to retrieve journeys: {response.UserMessage ?? response.Message ?? "Unknown error"}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting journeys for {Origin} to {Destination}", originName, destinationName);
+                    ViewBag.ErrorMessage = "An error occurred while retrieving journeys. Please try again later.";
+                }
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in Journey Index action");
+                return View("Error", new ErrorViewModel { 
+                    RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    ErrorMessage = "An unexpected error occurred. Please try again later."
+                });
+            }
+        }
+
+        /// <summary>
+        /// Retrieves location name by its ID from the API.
+        /// </summary>
+        /// <param name="session">Device session</param>
+        /// <param name="locationId">Location ID</param>
+        /// <returns>Location name or default if not found</returns>
+        private async Task<string> GetLocationNameById(DeviceSession session, int locationId)
+        {
+            if (locationId <= 0)
+            {
+                _logger.LogWarning("Invalid location ID provided: {LocationId}", locationId);
+                return "Unknown Location";
+            }
+            
+            try
+            {
+                var locationsRequest = new BusLocationRequest
+                {
+                    Data = null,
+                    DeviceSession = session,
+                    Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    Language = "en-EN"
+                };
+                
+                var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
+
+                if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
+                {
+                    var location = locationsResponse.Data.FirstOrDefault(l => l.Id == locationId);
+                    if (location != null)
+                    {
+                        return location.Name;
+                    }
+                    
+                    _logger.LogWarning("Location with ID {LocationId} not found", locationId);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to get locations. Status: {Status}", locationsResponse.Status ?? "Unknown");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting location name for ID: {LocationId}", locationId);
+            }
+
+            // Return a default message if the location could not be found
+            return $"Unknown Location ({locationId})";
+        }
+    }
+}

@@ -1,0 +1,113 @@
+@model ObiletJourneySearch.Models.ViewModels.JourneyViewModel
+@{
+    ViewData["Title"] = "Available Journeys";
+}
+
+<div class="container journey-list-container mt-3">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3>
+                            <a href="@Url.Action("Index", "Home")" class="text-white text-decoration-none">
+                                <i class="bi bi-arrow-left"></i>
+                            </a>
+                            @Model.OriginName - @Model.DestinationName
+                        </h3>
+                        <p class="mb-0">@Model.DepartureDate.ToString("D")</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+                    {
+                        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+                    }
+                    else if (Model.Journeys == null || !Model.Journeys.Any())
+                    {
+                        <div class="alert alert-info">No journeys found for this route on the selected date.</div>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @foreach (var journey in Model.Journeys)
+                            {
+                                <div class="list-group-item journey-item">
+                                    <div class="row">
+                                        <div class="col-md-3 d-flex flex-column justify-content-center">
+                                            <h5>@journey.JourneyDetail.Departure.ToString("HH:mm")</h5>
+                                            <div>@journey.OriginLocation</div>
+                                        </div>
+                                        <div class="col-md-3 d-flex flex-column justify-content-center">
+                                            <h5>@journey.JourneyDetail.Arrival.ToString("HH:mm")</h5>
+                                            <div>@journey.DestinationLocation</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="row">
+                                                <div class="col-md-6 d-flex flex-column justify-content-center">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <img src="https://s3.eu-central-1.amazonaws.com/static.obilet.com/images/partner/@(journey.PartnerId)-sm.png" 
+                                                             alt="@journey.PartnerName"
+                                                             style="max-height: 30px; max-width: 100px;" />
+                                                    </div>
+                                                    <div>@journey.BusType</div>
+                                                </div>
+                                                <div class="col-md-6 d-flex flex-column justify-content-center">
+                                                    <div class="text-nowrap mb-1">
+                                                        <span class="journey-feature">@journey.JourneyDetail.Duration</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="badge bg-light text-dark">@journey.AvailableSeats seats</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 d-flex flex-column justify-content-center align-items-end">
+                                            <h4 class="text-primary mb-2">@journey.JourneyDetail.InternetPrice @journey.JourneyDetail.Currency</h4>
+                                            <a href="https://www.obilet.com/seferler/@Model.OriginId-@Model.DestinationId/@Model.DepartureDate.ToString("yyyy-MM-dd")/@journey.Id" 
+                                               target="_blank" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                    @if (journey.Features != null && journey.Features.Any())
+                                    {
+                                        <div class="row mt-2">
+                                            <div class="col-md-12">
+                                                <small class="text-muted">
+                                                    <strong>Features:</strong>
+                                                    @foreach (var feature in journey.Features)
+                                                    {
+                                                        <span class="badge bg-light text-dark me-1">@feature.Name</span>
+                                                    }
+                                                </small>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .journey-item {
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        
+        .journey-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .journey-feature {
+            font-size: 0.9rem;
+        }
+    </style>
+}
