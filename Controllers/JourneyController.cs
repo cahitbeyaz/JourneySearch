@@ -3,7 +3,7 @@ using ObiletJourneySearch.ApiClient;
 using ObiletJourneySearch.Models;
 using ObiletJourneySearch.Models.DTOs;
 using ObiletJourneySearch.Models.ViewModels;
-using ObiletJourneySearch.Services;
+using ObiletJourneySearch.Utilities;
 
 namespace ObiletJourneySearch.Controllers
 {
@@ -13,16 +13,13 @@ namespace ObiletJourneySearch.Controllers
     public class JourneyController : Controller
     {
         private readonly IObiletApiClient _apiClient;
-        private readonly ISessionService _sessionService;
         private readonly ILogger<JourneyController> _logger;
 
         public JourneyController(
             IObiletApiClient apiClient,
-            ISessionService sessionService,
             ILogger<JourneyController> logger)
         {
             _apiClient = apiClient;
-            _sessionService = sessionService;
             _logger = logger;
         }
 
@@ -50,13 +47,14 @@ namespace ObiletJourneySearch.Controllers
                     _logger.LogWarning("Origin and destination are the same: {LocationId}", originId);
                     return RedirectToAction("Index", "Home", new { errorMessage = "Origin and destination cannot be the same location." });
                 }
-                
-                var session = await _sessionService.GetOrCreateSessionAsync();
+
+                var session = HttpContext.GetObiletSession();
                 if (session == null)
                 {
-                    _logger.LogError("Failed to create or retrieve session for journey search");
-                    return View("Error", new ErrorViewModel { 
-                        RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier, 
+                    _logger.LogError("Failed to retrieve session for journey search");
+                    return View("Error", new ErrorViewModel
+                    {
+                        RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier,
                         ErrorMessage = "Failed to create session with the server. Please try again later."
                     });
                 }
@@ -71,7 +69,7 @@ namespace ObiletJourneySearch.Controllers
                     _logger.LogWarning("Invalid departure date format: {DepartureDate}. Defaulting to tomorrow.", Date);
                     parsedDepartureDate = DateTime.Now.AddDays(1).Date;
                 }
-                
+
                 if (parsedDepartureDate.Date < DateTime.Now.Date)
                 {
                     _logger.LogWarning("Past departure date provided: {DepartureDate}", parsedDepartureDate);
@@ -105,7 +103,7 @@ namespace ObiletJourneySearch.Controllers
 
                     _logger.LogInformation("Requesting journeys: {Origin} to {Destination} on {Date}",
                         originName, destinationName, parsedDepartureDate.ToString("yyyy-MM-dd"));
-                        
+
                     var response = await _apiClient.GetBusJourneysAsync(journeyRequest);
 
                     if (response.Status == "Success" && response.Data != null)
@@ -114,7 +112,7 @@ namespace ObiletJourneySearch.Controllers
                             .Where(j => j.IsActive)
                             .OrderBy(j => j.JourneyDetail.Departure)
                             .ToList();
-                            
+
                         _logger.LogInformation("Found {Count} journeys for {Origin} to {Destination}",
                             model.Journeys.Count, originName, destinationName);
                     }
@@ -122,7 +120,7 @@ namespace ObiletJourneySearch.Controllers
                     {
                         _logger.LogError("Failed to get journeys. Status: {Status}, Message: {Message}",
                             response.Status, response.Message ?? "No message");
-                        
+
                         ViewBag.ErrorMessage = $"Failed to retrieve journeys: {response.UserMessage ?? response.Message ?? "Unknown error"}";
                     }
                 }
@@ -137,7 +135,8 @@ namespace ObiletJourneySearch.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error in Journey Index action");
-                return View("Error", new ErrorViewModel { 
+                return View("Error", new ErrorViewModel
+                {
                     RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier,
                     ErrorMessage = "An unexpected error occurred. Please try again later."
                 });
@@ -157,7 +156,7 @@ namespace ObiletJourneySearch.Controllers
                 _logger.LogWarning("Invalid location ID provided: {LocationId}", locationId);
                 return "Unknown Location";
             }
-            
+
             try
             {
                 var locationsRequest = new BusLocationRequest
@@ -167,7 +166,7 @@ namespace ObiletJourneySearch.Controllers
                     Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
                     Language = "en-EN"
                 };
-                
+
                 var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
 
                 if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
@@ -177,7 +176,7 @@ namespace ObiletJourneySearch.Controllers
                     {
                         return location.Name;
                     }
-                    
+
                     _logger.LogWarning("Location with ID {LocationId} not found", locationId);
                 }
                 else

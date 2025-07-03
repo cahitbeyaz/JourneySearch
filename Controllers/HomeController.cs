@@ -1,12 +1,11 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ObiletJourneySearch.ApiClient;
 using ObiletJourneySearch.Models;
 using ObiletJourneySearch.Models.DTOs;
 using ObiletJourneySearch.Models.ViewModels;
-using ObiletJourneySearch.Services;
-using System.Text.Json;
+using ObiletJourneySearch.Utilities;
+using System.Diagnostics;
 
 namespace ObiletJourneySearch.Controllers;
 
@@ -18,17 +17,14 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
     private readonly IObiletApiClient _apiClient;
-    private readonly ISessionService _sessionService;
     private const string SearchPreferencesCookieKey = "SearchPreferences";
 
     public HomeController(
         ILogger<HomeController> logger,
-        IObiletApiClient apiClient,
-        ISessionService sessionService)
+        IObiletApiClient apiClient)
     {
         _logger = logger;
         _apiClient = apiClient;
-        _sessionService = sessionService;
     }
 
     /// <summary>
@@ -41,21 +37,21 @@ public class HomeController : Controller
     {
         try
         {
-            // Get or create session
-            var session = await _sessionService.GetOrCreateSessionAsync();
+            // Get session from HttpContext (managed by middleware)
+            var session = HttpContext.GetObiletSession();
             if (session == null)
             {
                 return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier, ErrorMessage = "Failed to create session with the server. Please try again later." });
             }
 
             var model = new SearchViewModel();
-            
+
             // Display any TempData messages that might have been set from previous actions
             if (TempData["ErrorMessage"] != null)
             {
                 ViewBag.ErrorMessage = TempData["ErrorMessage"];
             }
-            
+
             if (TempData["SuccessMessage"] != null)
             {
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
@@ -183,16 +179,16 @@ public class HomeController : Controller
         // Swap origin and destination
         var tempId = model.OriginId;
         var tempName = model.OriginName;
-        
+
         model.OriginId = model.DestinationId;
         model.OriginName = model.DestinationName;
-        
+
         model.DestinationId = tempId;
         model.DestinationName = tempName;
-        
+
         // Update cookie with the new preferences
         SaveSearchPreferencesToCookie(model);
-        
+
         TempData["SuccessMessage"] = "Origin and destination locations have been swapped.";
         return RedirectToAction(nameof(Index));
     }
@@ -206,14 +202,14 @@ public class HomeController : Controller
     public IActionResult SetDate(string dateType)
     {
         var model = new SearchViewModel();
-        
+
         // Get saved search preferences from the cookie if they exist
         var savedPreferences = GetSearchPreferencesFromCookie();
         if (savedPreferences != null)
         {
             model = savedPreferences;
         }
-        
+
         switch (dateType?.ToLower() ?? string.Empty)
         {
             case "today":
@@ -228,9 +224,9 @@ public class HomeController : Controller
                 TempData["ErrorMessage"] = "Invalid date selection.";
                 break;
         }
-        
+
         SaveSearchPreferencesToCookie(model);
-        
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -244,21 +240,21 @@ public class HomeController : Controller
     {
         // Use the provided code or default to 500 (Internal Server Error)
         var statusCode = code ?? 500;
-        
+
         if (statusCode == 0)
         {
             // Default to 500 if no status code is specified
             statusCode = 500;
         }
-        
+
         Response.StatusCode = statusCode;
-        
-        return View(new ErrorViewModel 
-        { 
+
+        return View(new ErrorViewModel
+        {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
             StatusCode = statusCode,
             // ErrorMessage will be set in the view based on status code if not provided
-            ErrorMessage = TempData["ErrorMessage"]?.ToString() 
+            ErrorMessage = TempData["ErrorMessage"]?.ToString()
         });
     }
 
@@ -272,7 +268,7 @@ public class HomeController : Controller
     {
         try
         {
-            var session = await _sessionService.GetOrCreateSessionAsync();
+            var session = HttpContext.GetObiletSession();
             if (session == null)
             {
                 return Json(new { success = false, message = "Failed to create session with the server." });
@@ -319,7 +315,7 @@ public class HomeController : Controller
     {
         try
         {
-            var session = await _sessionService.GetOrCreateSessionAsync();
+            var session = HttpContext.GetObiletSession();
             if (session == null)
             {
                 return Json(new { success = false, message = "Failed to create session with the server." });
@@ -355,27 +351,28 @@ public class HomeController : Controller
             return Json(new { success = false, message = "An error occurred while searching for locations." });
         }
     }
-    
+
     /// <summary>
     /// Helper method to populate location options in the search view model
     /// </summary>
     private async Task PopulateLocationsInModel(SearchViewModel model)
     {
-        var session = await _sessionService.GetOrCreateSessionAsync();
+        // Get session from HttpContext (managed by middleware)
+        var session = HttpContext.GetObiletSession();
         if (session == null)
         {
             return;
         }
-        
+
         var locationsRequest = new BusLocationRequest
         {
             DeviceSession = session,
             Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
             Language = "en-EN"
         };
-        
+
         var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
-        
+
         if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
         {
             // Create select list items for the dropdown

@@ -1,3 +1,5 @@
+using ObiletJourneySearch.Middleware;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,7 +18,7 @@ builder.Services.AddSession(options =>
 
 // Register Obilet API client
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<ObiletJourneySearch.ApiClient.IObiletApiClient, ObiletJourneySearch.ApiClient.ObiletApiClient>();
+builder.Services.AddSingleton<ObiletJourneySearch.ApiClient.IObiletApiClient, ObiletJourneySearch.ApiClient.ObiletApiClient>();
 builder.Services.AddScoped<ObiletJourneySearch.Services.ISessionService, ObiletJourneySearch.Services.SessionService>();
 
 var app = builder.Build();
@@ -41,6 +43,9 @@ app.UseRouting();
 
 // Enable session
 app.UseSession();
+
+// Register the Obilet session middleware
+app.UseObiletSession();
 
 app.UseAuthorization();
 
