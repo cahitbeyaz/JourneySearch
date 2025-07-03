@@ -32,7 +32,7 @@ This application provides a user-friendly interface for searching bus journeys b
 - **Global Error Handling**: Centralized error management via middleware
 - **User-Friendly Error Messages**: Clear, actionable error information
 - **Status Code Support**: Different error types handled appropriately
-- **Session Management**: Robust session handling for API authentication
+- **Session Management**: Robust session handling for API authentication via custom middleware
 
 ## Additional Enhancements
 
@@ -52,6 +52,54 @@ This application provides a user-friendly interface for searching bus journeys b
 - **Session Management**: ASP.NET Core Session with JSON serialization
 - **Error Handling**: Custom middleware and MVC error pages
 - **State Management**: LocalStorage for client-side persistence
+
+## Obilet Session Middleware
+
+The application uses a custom middleware for managing Obilet API sessions across requests.
+
+### Key Features
+
+- **Automated Session Management**: Automatically creates and maintains Obilet API sessions
+- **Performance Optimization**: Skips session creation for static resources and error pages
+- **Request Pipeline Integration**: Integrates seamlessly into the ASP.NET Core pipeline
+- **Context Sharing**: Makes sessions available to controllers via HttpContext
+
+### Registration
+
+Registered in `Program.cs` after the session middleware:
+
+```csharp
+app.UseSession(); // ASP.NET Core session middleware
+app.UseObiletSession(); // Custom session middleware
+```
+
+### Usage in Controllers
+
+Access the session using the extension method:
+
+```csharp
+public async Task<IActionResult> Search(JourneySearchModel model)
+{
+    // Get the device session from the context
+    var session = HttpContext.GetObiletSession();
+    
+    // Use session in API calls
+    var journeyRequest = new JourneyRequest
+    {
+        DeviceSession = session,
+        // Other properties...
+    };
+    
+    // Continue with API call...
+}
+```
+
+### Path Exclusion
+
+The middleware automatically skips session creation for:
+- Static resources (`/css`, `/js`, `/lib`, `/images`)
+- Error pages (`/error`, `/home/error`)
+- Favicon requests
 
 ## Deployment
 
