@@ -176,7 +176,7 @@ namespace ObiletJourneySearch.Models.DTOs
         public string Station { get; set; }
 
         [JsonPropertyName("time")]
-        public DateTime Time { get; set; }
+        public DateTime? Time { get; set; }
 
         [JsonPropertyName("is-origin")]
         public bool IsOrigin { get; set; }

@@ -3,6 +3,114 @@
     ViewData["Title"] = "Bus Journey Search";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <style>
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .card-header {
+            background-color: #0064ff;
+            color: white;
+            font-weight: 600;
+            padding: 15px;
+            border-radius: 8px 8px 0 0 !important;
+        }
+        
+        /* Select2 custom styling to match reference */
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            height: 42px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 42px;
+            padding-left: 35px; /* Space for icon */
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Placeholder styling */
+        .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #6c757d;
+        }
+
+        /* Location labels */
+        .location-label {
+            font-weight: 600;
+            color: #0064ff;
+            margin-bottom: 8px;
+            margin-top: 12px;
+        }
+        
+        /* Field with icon */
+        .field-with-icon {
+            position: relative;
+        }
+        
+        .field-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            z-index: 10;
+        }
+        
+        /* Swap button styling */
+        .swap-button-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Date field styling */
+        .date-container .form-control {
+            height: 42px;
+        }
+        
+        /* Search button */
+        .search-button {
+            background-color: #0064ff;
+            border-color: #0064ff;
+            padding: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+        
+        .date-buttons .btn {
+            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+            color: #212529;
+            font-weight: 500;
+        }
+        
+        .date-buttons .btn:focus {
+            box-shadow: none;
+            border-color: #3949AB;
+        }
+        
+        .rotate-swap {
+            transition: transform 0.5s;
+            transform: rotate(180deg);
+        }
+    </style>
+}
+
 <div class="container journey-search-container">
     <div class="row">
         <div class="col-md-8 offset-md-2">
@@ -10,55 +118,71 @@
                 <div class="card-header bg-primary text-white">
                     <h2>Find Your Bus Journey</h2>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <form asp-controller="Home" asp-action="Search" method="post">
-                        <div class="form-group row mb-3">
-                            <label class="col-sm-3 col-form-label">From:</label>
-                            <div class="col-sm-9">
-                                <select asp-for="OriginId" class="form-control" asp-items="Model.LocationOptions">
-                                    <option value="">Select origin</option>
+                        <!-- From (Origin) Field -->
+                        <div class="mb-2">
+                            <div class="location-label">Nereden</div>
+                            <div class="field-with-icon">
+                                <i class="bi bi-geo-alt field-icon"></i>
+                                <input type="hidden" id="originSearchInput" name="SearchOrigin" asp-for="SearchOrigin" />
+                                <select id="originSelect" asp-for="OriginId" class="search-select" style="width: 100%">
+                                    @if (Model.OriginId.HasValue && !string.IsNullOrEmpty(Model.OriginName))
+                                    {
+                                        <option value="@Model.OriginId" selected>@Model.OriginName</option>
+                                    }
                                 </select>
                                 <span asp-validation-for="OriginId" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="form-group row mb-3">
-                            <div class="col-sm-3"></div>
-                            <div class="col-sm-9 text-center">
-                                <button type="submit" class="btn btn-outline-primary btn-sm" formaction="@Url.Action("SwapLocations", "Home")" formmethod="post">
-                                    <i class="bi bi-arrow-down-up"></i> Swap
-                                </button>
-                            </div>
+                        
+                        <!-- Swap Button Container (between From and To) -->
+                        <div class="text-end position-relative" style="height: 0;">
+                            <button id="swapButton" type="button" class="btn btn-light swap-button rounded-circle" 
+                                    style="position:absolute; right: 0; top: -5px; z-index:10; background-color:white;">
+                                <i class="bi bi-arrow-down-up"></i>
+                            </button>
                         </div>
-                        <div class="form-group row mb-3">
-                            <label class="col-sm-3 col-form-label">To:</label>
-                            <div class="col-sm-9">
-                                <select asp-for="DestinationId" class="form-control" asp-items="Model.LocationOptions">
-                                    <option value="">Select destination</option>
+                        
+                        <!-- To (Destination) Field -->
+                        <div class="mb-3">
+                            <div class="location-label">Nereye</div>
+                            <div class="field-with-icon">
+                                <i class="bi bi-geo-alt field-icon"></i>
+                                <input type="hidden" id="destinationSearchInput" name="SearchDestination" asp-for="SearchDestination" />
+                                <select id="destinationSelect" asp-for="DestinationId" class="search-select" style="width: 100%">
+                                    @if (Model.DestinationId.HasValue && !string.IsNullOrEmpty(Model.DestinationName))
+                                    {
+                                        <option value="@Model.DestinationId" selected>@Model.DestinationName</option>
+                                    }
                                 </select>
                                 <span asp-validation-for="DestinationId" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="form-group row mb-3">
-                            <label class="col-sm-3 col-form-label">Departure Date:</label>
-                            <div class="col-sm-9">
-                                <div class="input-group">
-                                    <input asp-for="DepartureDate" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
-                                    <div class="input-group-append" style="margin-left: 10px;">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary mr-1" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Today">
-                                            Today
-                                        </button>
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Tomorrow">
-                                            Tomorrow
-                                        </button>
-                                    </div>
+                        
+                        <!-- Date Field -->
+                        <div>
+                            <div class="location-label">Tarih</div>
+                            <div class="field-with-icon mb-2">
+                                <i class="bi bi-calendar-date field-icon"></i>
+                                <input asp-for="Date" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" style="padding-left: 35px;" />
+                                <span asp-validation-for="Date" class="text-danger"></span>
+                            </div>
+                            <div class="date-buttons">
+                                <div class="d-flex">
+                                    <button type="submit" class="btn btn-sm me-1 w-50" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Today">
+                                        Bugün
+                                    </button>
+                                    <button type="submit" class="btn btn-sm ms-1 w-50" formaction="@Url.Action("SetDate", "Home")" formmethod="post" name="dateType" value="Tomorrow">
+                                        Yarın
+                                    </button>
                                 </div>
-                                <span asp-validation-for="DepartureDate" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="form-group row">
-                            <div class="col-sm-12 text-center">
-                                <button type="submit" class="btn btn-primary btn-lg px-5">Search</button>
-                            </div>
+
+                        <!-- Search Button -->
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary search-button w-100">Bileti Bul</button>
                         </div>
                     </form>
                 </div>
@@ -68,25 +192,117 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function () {
-            // Set the origin and destination values if saved in model
-            const originId = '@Model.OriginId';
-            const destinationId = '@Model.DestinationId';
-            
-            if (originId) {
-                $('#OriginId').val(originId);
-            }
-            
-            if (destinationId) {
-                $('#DestinationId').val(destinationId);
-            }
-            
+            // Initialize Select2 for origin field with AJAX search
+            $('#originSelect').select2({
+                placeholder: "Search for origin location",
+                allowClear: true,
+                minimumInputLength: 2,
+                ajax: {
+                    url: '@Url.Action("SearchOriginLocations", "Home")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            searchTerm: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        if (data.success) {
+                            return {
+                                results: data.results
+                            };
+                        } else {
+                            console.error("Error loading origin locations:", data.message);
+                            return { results: [] };
+                        }
+                    },
+                    cache: true
+                }
+            });
+
+            // Initialize Select2 for destination field with AJAX search
+            $('#destinationSelect').select2({
+                placeholder: "Search for destination location",
+                allowClear: true,
+                minimumInputLength: 2,
+                ajax: {
+                    url: '@Url.Action("SearchDestinationLocations", "Home")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            searchTerm: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        if (data.success) {
+                            return {
+                                results: data.results
+                            };
+                        } else {
+                            console.error("Error loading destination locations:", data.message);
+                            return { results: [] };
+                        }
+                    },
+                    cache: true
+                }
+            });
+
+            // Store the search term when users type in the search boxes
+            $('#originSelect').on('select2:open', function() {
+                const searchField = $('.select2-search__field').last();
+                searchField.on('input', function() {
+                    $('#originSearchInput').val($(this).val());
+                });
+            });
+
+            $('#destinationSelect').on('select2:open', function() {
+                const searchField = $('.select2-search__field').last();
+                searchField.on('input', function() {
+                    $('#destinationSearchInput').val($(this).val());
+                });
+            });
+
+            // Handle swap button click
+            $('#swapButton').click(function(e) {
+                e.preventDefault();
+
+                // Get current selected data
+                const originId = $('#originSelect').val();
+                const originText = $('#originSelect option:selected').text();
+                const destinationId = $('#destinationSelect').val();
+                const destinationText = $('#destinationSelect option:selected').text();
+
+                // Clear both selects
+                $('#originSelect').empty().val(null).trigger('change');
+                $('#destinationSelect').empty().val(null).trigger('change');
+
+                // Swap the values
+                if (destinationId) {
+                    var newOriginOption = new Option(destinationText, destinationId, true, true);
+                    $('#originSelect').append(newOriginOption).trigger('change');
+                }
+
+                if (originId) {
+                    var newDestinationOption = new Option(originText, originId, true, true);
+                    $('#destinationSelect').append(newDestinationOption).trigger('change');
+                }
+
+                // Add a brief animation effect
+                $('#swapButton').addClass('rotate-swap');
+                setTimeout(function() {
+                    $('#swapButton').removeClass('rotate-swap');
+                }, 500);
+            });
+
             // Validate that origin and destination are different
             $('form').submit(function(e) {
-                const origin = $('#OriginId').val();
-                const destination = $('#DestinationId').val();
-                
+                const origin = $('#originSelect').val();
+                const destination = $('#destinationSelect').val();
+
                 if (origin === destination && origin !== '' && destination !== '') {
                     alert('Origin and destination cannot be the same location.');
                     e.preventDefault();
@@ -94,4 +310,7 @@
             });
         });
     </script>
+    <style>
+    
+    </style>
 }

@@ -52,27 +52,18 @@ namespace ObiletJourneySearch.ApiClient
                 var json = JsonSerializer.Serialize(request, _jsonOptions);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 
-                Console.WriteLine($"DEBUG - Sending request to {endpoint}: {json}");
-                
                 var response = await _httpClient.PostAsync(endpoint, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
                 
-                Console.WriteLine($"DEBUG - Response from {endpoint}: {responseContent}");
-                
-                // Still check for HTTP errors but don't throw
-                if (!response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"ERROR - API returned non-success status code: {response.StatusCode}");
-                }
+                // Check for HTTP errors but don't throw
                 
                 var result = JsonSerializer.Deserialize<TResponse>(responseContent, 
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     
                 return result;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"EXCEPTION in API call to {endpoint}: {ex.Message}");
                 throw; // Rethrow to be handled by caller
             }
         }
