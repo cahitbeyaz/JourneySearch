@@ -3,7 +3,7 @@ name: Deploy to Render
 on:
   push:
     branches:
-      - main  # Change if your default branch is different
+      - main  # or your main development branch
 
 jobs:
   deploy:
@@ -12,6 +12,17 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build the App
+        run: dotnet build --no-restore --configuration Release
+
       - name: Trigger Render Deploy
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
