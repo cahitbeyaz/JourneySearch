@@ -53,6 +53,21 @@ This application provides a user-friendly interface for searching bus journeys b
 - **Error Handling**: Custom middleware and MVC error pages
 - **State Management**: LocalStorage for client-side persistence
 
+## Deployment
+
+### Live Demo
+A live version of the application is deployed and accessible at:
+
+**[https://journeysearch.onrender.com/](https://journeysearch.onrender.com/)**
+
+This deployment is hosted on Render and automatically updates when changes are pushed to the main branch via GitHub Actions.
+
+### Deployment Configuration
+- **Platform**: Render Web Service
+- **Deployment Method**: Docker container via GitHub Actions
+- **Automated Deployment**: Configured through `.github/workflows/deploy.yml`
+- **Manual Deployment**: Available through GitHub Actions workflow_dispatch event
+
 ## Setup and Configuration
 
 ### Prerequisites
