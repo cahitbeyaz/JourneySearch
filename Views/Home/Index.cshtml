@@ -195,6 +195,29 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function () {
+            // Restore saved values from localStorage if they exist
+            const savedOriginId = localStorage.getItem('obilet_originId');
+            const savedOriginName = localStorage.getItem('obilet_originName');
+            const savedDestinationId = localStorage.getItem('obilet_destinationId');
+            const savedDestinationName = localStorage.getItem('obilet_destinationName');
+            const savedDate = localStorage.getItem('obilet_date');
+            
+            // Set default date to today if not saved
+            if (savedDate) {
+                $('#Date').val(savedDate);
+            }
+            
+            // Restore origin if saved
+            if (savedOriginId && savedOriginName) {
+                const originOption = new Option(savedOriginName, savedOriginId, true, true);
+                $('#originSelect').append(originOption).trigger('change');
+            }
+            
+            // Restore destination if saved
+            if (savedDestinationId && savedDestinationName) {
+                const destinationOption = new Option(savedDestinationName, savedDestinationId, true, true);
+                $('#destinationSelect').append(destinationOption).trigger('change');
+            }
             // Initialize Select2 for origin field with AJAX search
             $('#originSelect').select2({
                 placeholder: "Search for origin location",
@@ -258,12 +281,41 @@
                     $('#originSearchInput').val($(this).val());
                 });
             });
+            
+            // Save origin value when changed
+            $('#originSelect').on('select2:select', function(e) {
+                localStorage.setItem('obilet_originId', e.params.data.id);
+                localStorage.setItem('obilet_originName', e.params.data.text);
+            });
+            
+            // Clear saved origin on clearing the selection
+            $('#originSelect').on('select2:clear', function() {
+                localStorage.removeItem('obilet_originId');
+                localStorage.removeItem('obilet_originName');
+            });
 
             $('#destinationSelect').on('select2:open', function() {
                 const searchField = $('.select2-search__field').last();
                 searchField.on('input', function() {
                     $('#destinationSearchInput').val($(this).val());
                 });
+            });
+            
+            // Save destination value when changed
+            $('#destinationSelect').on('select2:select', function(e) {
+                localStorage.setItem('obilet_destinationId', e.params.data.id);
+                localStorage.setItem('obilet_destinationName', e.params.data.text);
+            });
+            
+            // Clear saved destination on clearing the selection
+            $('#destinationSelect').on('select2:clear', function() {
+                localStorage.removeItem('obilet_destinationId');
+                localStorage.removeItem('obilet_destinationName');
+            });
+            
+            // Save date when changed
+            $('#Date').change(function() {
+                localStorage.setItem('obilet_date', $(this).val());
             });
 
             // Handle swap button click
@@ -284,11 +336,19 @@
                 if (destinationId) {
                     var newOriginOption = new Option(destinationText, destinationId, true, true);
                     $('#originSelect').append(newOriginOption).trigger('change');
+                    
+                    // Update localStorage after swap
+                    localStorage.setItem('obilet_originId', destinationId);
+                    localStorage.setItem('obilet_originName', destinationText);
                 }
 
                 if (originId) {
                     var newDestinationOption = new Option(originText, originId, true, true);
                     $('#destinationSelect').append(newDestinationOption).trigger('change');
+                    
+                    // Update localStorage after swap
+                    localStorage.setItem('obilet_destinationId', originId);
+                    localStorage.setItem('obilet_destinationName', originText);
                 }
 
                 // Add a brief animation effect
@@ -297,15 +357,34 @@
                     $('#swapButton').removeClass('rotate-swap');
                 }, 500);
             });
-
+            
             // Validate that origin and destination are different
             $('form').submit(function(e) {
                 const origin = $('#originSelect').val();
                 const destination = $('#destinationSelect').val();
+                const date = $('#Date').val();
+                const originText = $('#originSelect option:selected').text();
+                const destinationText = $('#destinationSelect option:selected').text();
 
-                if (origin === destination && origin !== '' && destination !== '') {
-                    alert('Origin and destination cannot be the same location.');
+                // Only validate when both fields have values
+                if (origin && destination && origin === destination) {
+                    // Show inline error message instead of alert
+                    if ($('#location-error').length === 0) {
+                        $('<div id="location-error" class="text-danger mt-2">Origin and destination cannot be the same location</div>')
+                            .insertAfter('#destinationSelect');
+                    }
                     e.preventDefault();
+                    return false;
+                } else {
+                    // Remove error message if it exists
+                    $('#location-error').remove();
+                    
+                    // Save values to localStorage on successful form submission
+                    if (origin) localStorage.setItem('obilet_originId', origin);
+                    if (originText) localStorage.setItem('obilet_originName', originText);
+                    if (destination) localStorage.setItem('obilet_destinationId', destination);
+                    if (destinationText) localStorage.setItem('obilet_destinationName', destinationText);
+                    if (date) localStorage.setItem('obilet_date', date);
                 }
             });
         });
