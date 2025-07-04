@@ -24,7 +24,6 @@ namespace ObiletJourneySearch.Services.Caching
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <inheritdoc />
         public async Task<BusLocationResponse> GetAllLocationsAsync(BusLocationRequest request)
         {
             return await _cacheService.GetOrCreateAsync(
@@ -36,7 +35,6 @@ namespace ObiletJourneySearch.Services.Caching
                 DefaultLocationCacheDuration);
         }
 
-        /// <inheritdoc />
         public void InvalidateLocationsCache()
         {
             _logger.LogInformation("Invalidating bus locations cache");

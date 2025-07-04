@@ -92,7 +92,7 @@ namespace ObiletJourneySearch.Controllers
                     {
                         DeviceSession = session,
                         Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                        Language = "en-EN",
+                        Language = "tr-TR",
                         Data = new JourneyRequestData
                         {
                             OriginId = originId,
@@ -164,7 +164,7 @@ namespace ObiletJourneySearch.Controllers
                     Data = null,
                     DeviceSession = session,
                     Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    Language = "en-EN"
+                    Language = "tr-TR"
                 };
 
                 var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);

@@ -1,14 +1,10 @@
 using System;
-using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ObiletJourneySearch.Services.Caching
 {
-    /// <summary>
-    /// In-memory implementation of the cache service
-    /// </summary>
     public class MemoryCacheService : ICacheService
     {
         private readonly IMemoryCache _cache;
@@ -21,7 +17,6 @@ namespace ObiletJourneySearch.Services.Caching
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <inheritdoc />
         public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expirationTime = null)
         {
             if (_cache.TryGetValue<T>(key, out var cachedValue))
@@ -42,7 +37,6 @@ namespace ObiletJourneySearch.Services.Caching
             return newValue;
         }
 
-        /// <inheritdoc />
         public bool TryGetValue<T>(string key, out T value)
         {
             var result = _cache.TryGetValue<T>(key, out value);
@@ -59,7 +53,6 @@ namespace ObiletJourneySearch.Services.Caching
             return result;
         }
 
-        /// <inheritdoc />
         public void Set<T>(string key, T value, TimeSpan? expirationTime = null)
         {
             var options = new MemoryCacheEntryOptions
@@ -71,7 +64,6 @@ namespace ObiletJourneySearch.Services.Caching
             _logger.LogInformation("Item added to cache with key: {CacheKey}", key);
         }
 
-        /// <inheritdoc />
         public void Remove(string key)
         {
             _cache.Remove(key);

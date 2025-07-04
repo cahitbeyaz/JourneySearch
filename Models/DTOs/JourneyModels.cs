@@ -11,7 +11,7 @@ namespace ObiletJourneySearch.Models.DTOs
         public string Date { get; set; }
 
         [JsonPropertyName("language")]
-        public string Language { get; set; } = "en-EN";
+        public string Language { get; set; } = "tr-TR";
 
         [JsonPropertyName("data")]
         public JourneyRequestData Data { get; set; }

@@ -294,7 +294,7 @@ public class HomeController : Controller
                 Data = searchTerm,
                 DeviceSession = session,
                 Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                Language = "en-EN"
+                Language = "tr-TR"
             };
 
             var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
@@ -341,7 +341,7 @@ public class HomeController : Controller
                 Data = searchTerm,
                 DeviceSession = session,
                 Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                Language = "en-EN"
+                Language = "tr-TR"
             };
 
             var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
@@ -383,7 +383,7 @@ public class HomeController : Controller
         {
             DeviceSession = session,
             Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-            Language = "en-EN"
+            Language = "tr-TR"
         };
 
         // Use location cache service instead of directly calling the API
