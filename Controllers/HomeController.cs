@@ -10,10 +10,6 @@ using System.Diagnostics;
 
 namespace ObiletJourneySearch.Controllers;
 
-/// <summary>
-/// Handles the home page and search form operations including bus locations and session management.
-/// </summary>
-
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
@@ -31,12 +27,7 @@ public class HomeController : Controller
         _locationCacheService = locationCacheService;
     }
 
-    /// <summary>
-    /// Displays the main search form to the user. Loads available bus locations and
-    /// previously saved search preferences from cookies if available.
-    /// </summary>
-    /// <param name="searchTerm">Optional search term to filter bus locations</param>
-    /// <returns>Search view with populated locations and user preferences</returns>
+    // Show search form with locations and saved preferences
     public async Task<IActionResult> Index(string searchTerm = null)
     {
         try
@@ -89,18 +80,9 @@ public class HomeController : Controller
                     Language = "tr-TR"
                 };
 
-                // When searching for specific locations, use API directly (don't cache searches)
-                BusLocationResponse locationsResponse;
-                if (!string.IsNullOrEmpty(searchTerm))
-                {
-                    _logger.LogInformation("Searching for locations with term: {SearchTerm}", searchTerm);
-                    locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
-                }
-                else
-                {
-                    _logger.LogInformation("Getting all locations from cache");
-                    locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
-                }
+                // Use cache for the initial location list (search is handled by dedicated AJAX endpoints)
+                _logger.LogInformation("Getting all locations from cache for initial load");
+                var locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
 
                 if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
                 {
@@ -110,9 +92,13 @@ public class HomeController : Controller
                         .Select(l => new SelectListItem
                         {
                             Value = l.Id.ToString(),
-                            Text = l.Name
+                            Text = l.Name,
+                            // Keep user preferences selected
+                            Selected = (l.Id == model.OriginId || l.Id == model.DestinationId)
                         })
                         .ToList();
+                    
+                    _logger.LogInformation("Loaded {Count} locations for search form", model.LocationOptions.Count);
                 }
                 else
                 {
@@ -132,11 +118,7 @@ public class HomeController : Controller
         }
     }
 
-    /// <summary>
-    /// Processes the search form submission, validates the input, and redirects to the journey results page.
-    /// </summary>
-    /// <param name="model">Search view model containing user selected origin, destination, and date</param>
-    /// <returns>Redirect to journey results page or back to search form with validation errors</returns>
+    // Process search form and redirect to journey results
     [HttpPost]
     public async Task<IActionResult> Search(SearchViewModel model)
     {
@@ -183,11 +165,7 @@ public class HomeController : Controller
         }
     }
 
-    /// <summary>
-    /// Swaps the origin and destination locations in the search form.
-    /// </summary>
-    /// <param name="model">Search view model containing the current origin and destination</param>
-    /// <returns>Index view with swapped locations</returns>
+    // Swap origin and destination locations
     [HttpPost]
     public IActionResult SwapLocations(SearchViewModel model)
     {
@@ -208,11 +186,7 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>
-    /// Sets the departure date to either today or tomorrow based on user selection.
-    /// </summary>
-    /// <param name="dateType">Date selection type ("Today" or "Tomorrow")</param>
-    /// <returns>Redirect to Index view with updated date</returns>
+    // Set departure date to today or tomorrow
     [HttpPost]
     public IActionResult SetDate(string dateType)
     {
@@ -273,11 +247,7 @@ public class HomeController : Controller
         });
     }
 
-    /// <summary>
-    /// API endpoint to search for bus locations by text for origin field
-    /// </summary>
-    /// <param name="searchTerm">Text to search for</param>
-    /// <returns>JSON result with matching locations</returns>
+    // Search for bus locations by text for origin field
     [HttpGet]
     public async Task<IActionResult> SearchOriginLocations(string searchTerm)
     {
@@ -320,11 +290,7 @@ public class HomeController : Controller
         }
     }
 
-    /// <summary>
-    /// API endpoint to search for bus locations by text for destination field
-    /// </summary>
-    /// <param name="searchTerm">Text to search for</param>
-    /// <returns>JSON result with matching locations</returns>
+    // Search for bus locations by text for destination field
     [HttpGet]
     public async Task<IActionResult> SearchDestinationLocations(string searchTerm)
     {
@@ -367,9 +333,7 @@ public class HomeController : Controller
         }
     }
 
-    /// <summary>
-    /// Helper method to populate location options in the search view model
-    /// </summary>
+    // Populate location options in the search view model
     private async Task PopulateLocationsInModel(SearchViewModel model)
     {
         // Get session from HttpContext (managed by middleware)
