@@ -147,7 +147,6 @@ The application uses the following configuration settings:
 ## Future Improvements
 
 - Distributed session storage (e.g., Redis) for multi-instance deployments
-- User authentication to link Obilet sessions across devices
 - Comprehensive testing (unit and integration tests)
 - Accessibility improvements
 - Centralized logging and monitoring
