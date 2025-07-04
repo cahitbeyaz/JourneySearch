@@ -5,10 +5,7 @@ using System.Text.Json;
 
 namespace ObiletJourneySearch.Middleware
 {
-    /// <summary>
-    /// Middleware responsible for managing Obilet API sessions across the application.
-    /// This centralizes session management and ensures all requests have access to a valid session.
-    /// </summary>
+    // Middleware responsible for managing Obilet API sessions across the application.
     public class ObiletSessionMiddleware
     {
         private readonly RequestDelegate _next;
@@ -64,17 +61,11 @@ namespace ObiletJourneySearch.Middleware
             await _next(context);
         }
 
-        /// <summary>
-        /// Determines if a request path requires a session
-        /// </summary>
         private bool RequiresSession(PathString path)
         {
             return RequestPathHelper.RequiresSession(path);
         }
 
-        /// <summary>
-        /// Get the current session from the HTTP context if available
-        /// </summary>
         private DeviceSession GetSessionFromContext(HttpContext context)
         {
             if (context.Session.TryGetValue(SessionKey, out byte[] sessionData))
@@ -93,10 +84,6 @@ namespace ObiletJourneySearch.Middleware
             return null;
         }
 
-        /// <summary>
-        /// Creates a new session by calling the Obilet API
-        /// </summary>
-        /// <param name="context">The HttpContext for the current request</param>
         private async Task<DeviceSession> CreateNewSessionAsync(HttpContext context)
         {
             try
@@ -142,9 +129,6 @@ namespace ObiletJourneySearch.Middleware
             return null;
         }
 
-        /// <summary>
-        /// Stores session in the HTTP session
-        /// </summary>
         private void StoreSession(HttpContext context, DeviceSession session)
         {
             var sessionJson = JsonSerializer.Serialize(session);
@@ -152,9 +136,6 @@ namespace ObiletJourneySearch.Middleware
             context.Session.Set(SessionKey, sessionData);
         }
 
-        /// <summary>
-        /// Extracts browser information from the user agent
-        /// </summary>
         private Browser GetBrowserInfo(HttpContext context)
         {
             try

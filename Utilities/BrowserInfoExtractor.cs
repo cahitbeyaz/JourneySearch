@@ -4,18 +4,10 @@ using System.Text.RegularExpressions;
 
 namespace ObiletJourneySearch.Utilities
 {
-    /// <summary>
-    /// Helper class for extracting browser information from requests
-    /// </summary>
     public static class BrowserInfoExtractor
     {
         private static readonly Regex BrowserRegex = new Regex(@"(chrome|firefox|safari|edge|opera|ie)[\/\s]*([\d\.]+)", RegexOptions.IgnoreCase);
         
-        /// <summary>
-        /// Extract browser information from the HTTP context
-        /// </summary>
-        /// <param name="context">The HTTP context to extract information from</param>
-        /// <returns>Browser information object</returns>
         public static Browser GetBrowserInfo(HttpContext context)
         {
             var userAgent = context.Request.Headers.UserAgent.ToString();
