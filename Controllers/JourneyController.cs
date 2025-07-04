@@ -7,9 +7,7 @@ using ObiletJourneySearch.Utilities;
 
 namespace ObiletJourneySearch.Controllers
 {
-    /// <summary>
-    /// Handles journey search results display and related operations.
-    /// </summary>
+   
     public class JourneyController : Controller
     {
         private readonly IObiletApiClient _apiClient;
@@ -23,15 +21,6 @@ namespace ObiletJourneySearch.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Displays available journeys for the selected route and date.
-        /// </summary>
-        /// <param name="originId">Origin location ID</param>
-        /// <param name="destinationId">Destination location ID</param>
-        /// <param name="originName">Origin location name</param>
-        /// <param name="destinationName">Destination location name</param>
-        /// <param name="departureDate">Departure date</param>
-        /// <returns>Journey results view</returns>
         public async Task<IActionResult> Index(int originId, int destinationId, string originName, string destinationName, string Date)
         {
             try
@@ -141,56 +130,6 @@ namespace ObiletJourneySearch.Controllers
                     ErrorMessage = "An unexpected error occurred. Please try again later."
                 });
             }
-        }
-
-        /// <summary>
-        /// Retrieves location name by its ID from the API.
-        /// </summary>
-        /// <param name="session">Device session</param>
-        /// <param name="locationId">Location ID</param>
-        /// <returns>Location name or default if not found</returns>
-        private async Task<string> GetLocationNameById(DeviceSession session, int locationId)
-        {
-            if (locationId <= 0)
-            {
-                _logger.LogWarning("Invalid location ID provided: {LocationId}", locationId);
-                return "Unknown Location";
-            }
-
-            try
-            {
-                var locationsRequest = new BusLocationRequest
-                {
-                    Data = null,
-                    DeviceSession = session,
-                    Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    Language = "tr-TR"
-                };
-
-                var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
-
-                if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
-                {
-                    var location = locationsResponse.Data.FirstOrDefault(l => l.Id == locationId);
-                    if (location != null)
-                    {
-                        return location.Name;
-                    }
-
-                    _logger.LogWarning("Location with ID {LocationId} not found", locationId);
-                }
-                else
-                {
-                    _logger.LogWarning("Failed to get locations. Status: {Status}", locationsResponse.Status ?? "Unknown");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting location name for ID: {LocationId}", locationId);
-            }
-
-            // Return a default message if the location could not be found
-            return $"Unknown Location ({locationId})";
         }
     }
 }

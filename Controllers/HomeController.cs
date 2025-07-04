@@ -68,47 +68,48 @@ public class HomeController : Controller
                 model.Date = DateTime.Now.AddDays(1).Date;
             }
 
-            try
-            {
-                // Get bus locations from API - when searchTerm is null, API returns initial list
-                var locationsRequest = new BusLocationRequest
-                {
-                    // Pass null data to get initial list of locations when searchTerm is null
-                    Data = searchTerm,
-                    DeviceSession = session,
-                    Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    Language = "tr-TR"
-                };
+            //select2 makes Search request anyways, even if inital data is loaded. Therefore I have commented out below code until a further implementation
+            //try
+            //{
+            //    // Get bus locations from API - when searchTerm is null, API returns initial list
+            //    var locationsRequest = new BusLocationRequest
+            //    {
+            //        // Pass null data to get initial list of locations when searchTerm is null
+            //        Data = searchTerm,
+            //        DeviceSession = session,
+            //        Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+            //        Language = "tr-TR"
+            //    };
 
-                // Use cache for the initial location list (search is handled by dedicated AJAX endpoints)
-                _logger.LogInformation("Getting all locations from cache for initial load");
-                var locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
+            //    // Use cache for the initial location list (search is handled by dedicated AJAX endpoints)
+            //    _logger.LogInformation("Getting all locations from cache for initial load");
+            //    var locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
 
-                if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
-                {
-                    // Create select list items for the dropdown
-                    model.LocationOptions = locationsResponse.Data
-                        .OrderBy(l => l.Rank ?? int.MaxValue)
-                        .Select(l => new SelectListItem
-                        {
-                            Value = l.Id.ToString(),
-                            Text = l.Name,
-                            // Keep user preferences selected
-                            Selected = (l.Id == model.OriginId || l.Id == model.DestinationId)
-                        })
-                        .ToList();
-                    
-                    _logger.LogInformation("Loaded {Count} locations for search form", model.LocationOptions.Count);
-                }
-                else
-                {
-                    ViewBag.ErrorMessage = $"Failed to retrieve bus locations: {locationsResponse.Message ?? "Unknown error"}";
-                }
-            }
-            catch (Exception)
-            {
-                ViewBag.ErrorMessage = "An error occurred while retrieving bus locations. Please try again later.";
-            }
+            //    if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
+            //    {
+            //        // Create select list items for the dropdown
+            //        model.LocationOptions = locationsResponse.Data
+            //            .OrderBy(l => l.Rank ?? int.MaxValue)
+            //            .Select(l => new SelectListItem
+            //            {
+            //                Value = l.Id.ToString(),
+            //                Text = l.Name,
+            //                // Keep user preferences selected
+            //                Selected = (l.Id == model.OriginId || l.Id == model.DestinationId)
+            //            })
+            //            .ToList();
+
+            //        _logger.LogInformation("Loaded {Count} locations for search form", model.LocationOptions.Count);
+            //    }
+            //    else
+            //    {
+            //        ViewBag.ErrorMessage = $"Failed to retrieve bus locations: {locationsResponse.Message ?? "Unknown error"}";
+            //    }
+            //}
+            //catch (Exception)
+            //{
+            //    ViewBag.ErrorMessage = "An error occurred while retrieving bus locations. Please try again later.";
+            //}
 
             return View(model);
         }
@@ -186,43 +187,6 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // Set departure date to today or tomorrow
-    [HttpPost]
-    public IActionResult SetDate(string dateType)
-    {
-        var model = new SearchViewModel();
-
-        // Get saved search preferences from the cookie if they exist
-        var savedPreferences = GetSearchPreferencesFromCookie();
-        if (savedPreferences != null)
-        {
-            model = savedPreferences;
-        }
-
-        switch (dateType?.ToLower() ?? string.Empty)
-        {
-            case "today":
-                model.Date = DateTime.Now.Date;
-                TempData["SuccessMessage"] = "Departure date set to today.";
-                break;
-            case "tomorrow":
-                model.Date = DateTime.Now.Date.AddDays(1);
-                TempData["SuccessMessage"] = "Departure date set to tomorrow.";
-                break;
-            default:
-                TempData["ErrorMessage"] = "Invalid date selection.";
-                break;
-        }
-
-        SaveSearchPreferencesToCookie(model);
-
-        return RedirectToAction(nameof(Index));
-    }
-
-    public IActionResult Privacy()
-    {
-        return View();
-    }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error(int? code = null)
