@@ -1,23 +1,18 @@
 # Obilet Journey Search
 
-An ASP.NET Core MVC application for searching and booking bus journeys across Turkey using the Obilet.com API.
+ASP.NET Core MVC app for searching bus journeys across Turkey using the Obilet.com API.
 
 ## Overview
 
-This application provides a user-friendly interface for searching bus journeys between locations in Turkey. Users can select origin and destination locations from a searchable dropdown, choose a departure date, and view available journeys with pricing and details.
+Searchable interface for bus journeys between locations in Turkey. Users select origin and destination locations, choose a departure date, and view available journeys with pricing and details.
 
 ## Features
 
 ### Core Functionality
 - **Bus Location Search**: Text-based search for origin and destination locations
 - **Journey Search**: Find available journeys between selected locations on a specific date
-- **Journey Results**: View comprehensive journey details including:
-  - Departure and arrival times
-  - Price information (formatted to two decimal places)
-  - Available seats
-  - Journey duration
-  - Bus features and amenities
-  - Bus company information
+- **Journey Results**: View journey details (times, prices, seats, duration, bus features)
+- **Caching System**: Memory cache for locations to improve performance
 
 ### User Experience
 - **Modern UI Design**: Clean, responsive card-based layout matching the reference design
@@ -49,6 +44,7 @@ This application provides a user-friendly interface for searching bus journeys b
 - **Framework**: ASP.NET Core MVC
 - **Frontend**: Bootstrap 5, jQuery, Select2, Bootstrap Icons
 - **API Integration**: Obilet.com Business API
+- **Caching**: In-memory caching for location data
 - **Session Management**: ASP.NET Core Session with JSON serialization
 - **Error Handling**: Custom middleware and MVC error pages
 - **State Management**: LocalStorage for client-side persistence

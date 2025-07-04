@@ -6,17 +6,12 @@ using System.Threading.Tasks;
 
 namespace ObiletJourneySearch.Services.Caching
 {
-    /// <summary>
-    /// Service to handle caching for bus location data
-    /// </summary>
     public class LocationCacheService : ILocationCacheService
     {
         private readonly ICacheService _cacheService;
         private readonly IObiletApiClient _apiClient;
         private readonly ILogger<LocationCacheService> _logger;
         private const string LocationCacheKey = "AllBusLocations";
-        
-        // Default cache duration for locations (1 hour)
         private static readonly TimeSpan DefaultLocationCacheDuration = TimeSpan.FromHours(1);
 
         public LocationCacheService(
