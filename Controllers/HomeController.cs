@@ -4,6 +4,7 @@ using ObiletJourneySearch.ApiClient;
 using ObiletJourneySearch.Models;
 using ObiletJourneySearch.Models.DTOs;
 using ObiletJourneySearch.Models.ViewModels;
+using ObiletJourneySearch.Services.Caching;
 using ObiletJourneySearch.Utilities;
 using System.Diagnostics;
 
@@ -17,14 +18,17 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
     private readonly IObiletApiClient _apiClient;
+    private readonly ILocationCacheService _locationCacheService;
     private const string SearchPreferencesCookieKey = "SearchPreferences";
 
     public HomeController(
         ILogger<HomeController> logger,
-        IObiletApiClient apiClient)
+        IObiletApiClient apiClient,
+        ILocationCacheService locationCacheService)
     {
         _logger = logger;
         _apiClient = apiClient;
+        _locationCacheService = locationCacheService;
     }
 
     /// <summary>
@@ -85,7 +89,18 @@ public class HomeController : Controller
                     Language = "tr-TR"
                 };
 
-                var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
+                // When searching for specific locations, use API directly (don't cache searches)
+                BusLocationResponse locationsResponse;
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    _logger.LogInformation("Searching for locations with term: {SearchTerm}", searchTerm);
+                    locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
+                }
+                else
+                {
+                    _logger.LogInformation("Getting all locations from cache");
+                    locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
+                }
 
                 if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
                 {
@@ -371,7 +386,9 @@ public class HomeController : Controller
             Language = "en-EN"
         };
 
-        var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
+        // Use location cache service instead of directly calling the API
+        _logger.LogInformation("Attempting to get locations from cache");
+        var locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
 
         if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
         {
@@ -384,6 +401,8 @@ public class HomeController : Controller
                     Text = l.Name
                 })
                 .ToList();
+            
+            _logger.LogInformation("Successfully populated {LocationCount} locations in model", model.LocationOptions?.Count ?? 0);
         }
     }
 

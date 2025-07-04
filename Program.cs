@@ -1,4 +1,5 @@
 using ObiletJourneySearch.Middleware;
+using ObiletJourneySearch.Services.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,13 @@ builder.Services.AddControllersWithViews();
 
 // Configure HTTP context accessor for getting client IP address
 builder.Services.AddHttpContextAccessor();
+
+// Add memory cache
+builder.Services.AddMemoryCache();
+
+// Register cache services
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+builder.Services.AddSingleton<ILocationCacheService, LocationCacheService>();
 
 // Add session services
 builder.Services.AddSession(options =>
