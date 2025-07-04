@@ -1,10 +1,10 @@
 # Obilet Journey Search
 
-ASP.NET Core MVC app for searching bus journeys across Turkey using the Obilet.com API.
+ASP.NET Core MVC app for searching bus journeys using the Obilet.com API.
 
 ## Overview
 
-Searchable interface for bus journeys between locations in Turkey. Users select origin and destination locations, choose a departure date, and view available journeys with pricing and details.
+Searchable interface for bus journeys between locations. Users select origin and destination locations, choose a departure date, and view available journeys with pricing and details.
 
 ## Features
 
@@ -26,13 +26,11 @@ Searchable interface for bus journeys between locations in Turkey. Users select 
 ### Error Handling and Reliability
 - **Global Error Handling**: Centralized error management via middleware
 - **User-Friendly Error Messages**: Clear, actionable error information
-- **Status Code Support**: Different error types handled appropriately
 - **Session Management**: Robust session handling for API authentication via custom middleware
 
 ## Additional Enhancements
 
 - **Comprehensive Session Management**: Maintains device sessions for each user via ASP.NET Core session storage
-- **Direct Location Name Transfer**: Passing location names directly between search and results pages for performance optimization
 - **Responsive Design**: Mobile-friendly layout with appropriate spacing and sizing
 - **Fixed Price Formatting**: Consistent display of prices with exact two decimal places
 - **Fixed-Width Price Containers**: Price containers sized to handle 5 digits, comma, and two decimal places
@@ -42,7 +40,7 @@ Searchable interface for bus journeys between locations in Turkey. Users select 
 ## Technologies Used
 
 - **Framework**: ASP.NET Core MVC
-- **Frontend**: Bootstrap 5, jQuery, Select2, Bootstrap Icons
+- **Frontend**: Bootstrap, jQuery, Select2, Bootstrap Icons
 - **API Integration**: Obilet.com Business API
 - **Caching**: In-memory caching for location data
 - **Session Management**: ASP.NET Core Session with JSON serialization
@@ -115,7 +113,7 @@ This deployment is hosted on Render and automatically updates when changes are p
 ## Setup and Configuration
 
 ### Prerequisites
-- .NET 6.0 SDK or newer
+- .NET 9.0 SDK or newer
 - Visual Studio 2022 or Visual Studio Code with C# extensions
 
 ### Configuration
