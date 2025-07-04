@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -39,30 +38,15 @@ namespace ObiletJourneySearch.Middleware
             context.Response.ContentType = "text/html";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-            // For AJAX/API requests, return JSON
-            if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
-                context.Request.Path.StartsWithSegments("/api"))
+            // Log additional details in development environment
+            if (_environment.IsDevelopment())
             {
-                return HandleApiException(context, exception);
+                _logger.LogError(exception, "Exception details: {Message}", exception.Message);
             }
 
-            // For regular requests, redirect to error page
+            // Redirect to error page
             context.Response.Redirect($"/Home/Error?code={context.Response.StatusCode}");
             return Task.CompletedTask;
-        }
-
-        private Task HandleApiException(HttpContext context, Exception exception)
-        {
-            var response = new
-            {
-                error = _environment.IsDevelopment() 
-                    ? exception.Message 
-                    : "An error occurred. Please try again later.",
-                stackTrace = _environment.IsDevelopment() ? exception.StackTrace : null
-            };
-
-            var jsonResponse = JsonSerializer.Serialize(response);
-            return context.Response.WriteAsync(jsonResponse);
         }
     }
 
