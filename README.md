@@ -110,6 +110,33 @@ This deployment is hosted on Render and automatically updates when changes are p
 - **Automated Deployment**: Configured through `.github/workflows/deploy.yml`
 - **Manual Deployment**: Available through GitHub Actions workflow_dispatch event
 
+### Docker Usage
+
+#### Prerequisites
+- Docker Engine installed on your machine
+- Docker Compose (optional, for development environments)
+
+#### Building the Docker Image
+```bash
+# From the solution root directory (where the .sln file is located)
+docker build -t obilet-journey-search .
+```
+
+#### Running the Application in a Docker Container
+```bash
+# Run the container on port 8080
+docker run -d -p 8080:8080 --name obilet-app obilet-journey-search
+```
+
+#### Configuration with Docker
+You can override configuration settings using environment variables:
+```bash
+docker run -d -p 8080:8080 \
+  -e "ObiletApi__Token=your-api-token" \
+  -e "ObiletApi__BaseUrl=https://v2-api.obilet.com/api/" \
+  --name obilet-app obilet-journey-search
+```
+
 ## Setup and Configuration
 
 ### Prerequisites
