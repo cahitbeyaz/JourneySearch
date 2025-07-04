@@ -168,49 +168,6 @@ namespace ObiletJourneySearch.Middleware
             }
         }
 
-        /// <summary>
-        /// Extracts version information from a user agent string
-        /// </summary>
-        private string ExtractVersion(string userAgent, string marker)
-        {
-            if (string.IsNullOrEmpty(userAgent) || string.IsNullOrEmpty(marker))
-            {
-                _logger.LogWarning("User agent or marker is empty when extracting version");
-                return "unknown";
-            }
-            
-            try
-            {
-                int markerIndex = userAgent.IndexOf(marker);
-                if (markerIndex < 0)
-                {
-                    _logger.LogWarning("Marker '{Marker}' not found in user agent", marker);
-                    return "unknown";
-                }
-                
-                int index = markerIndex + marker.Length;
-                int endIndex = index;
-                
-                // Find the end of the version string
-                while (endIndex < userAgent.Length && 
-                       (char.IsDigit(userAgent[endIndex]) || userAgent[endIndex] == '.'))
-                {
-                    endIndex++;
-                }
-                
-                if (endIndex > index)
-                {
-                    string version = userAgent.Substring(index, endIndex - index);
-                    return string.IsNullOrEmpty(version) ? "unknown" : version;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error extracting browser version from user agent with marker {Marker}", marker);
-            }
-            
-            return "unknown"; // Fallback version if extraction fails
-        }
     }
 
     // Extension method for registering the middleware
