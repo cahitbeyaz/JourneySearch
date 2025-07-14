@@ -124,19 +124,14 @@
                 </div>
                 <div class="card-body pt-0">
                     <form asp-controller="Journey" asp-action="Index" method="get">
-                        <!-- From (Origin) Field -->
                         <div class="mb-2">
                             <div class="location-label">Nereden</div>
                             <div class="field-with-icon">
                                 <i class="bi bi-geo-alt field-icon"></i>
                                 <select id="originSelect" name="originId" class="form-select" required>
                                     <option value="">Kalkış Yeri Seçin</option>
-                                    @if (Model != null && Model.OriginId > 0)
-                                    {
-                                        <option value="@Model.OriginId" selected>@Model.OriginName</option>
-                                    }
                                 </select>
-                                <input type="hidden" id="originName" name="originName" value="@(Model != null ? Model.OriginName : "")" />
+                                <input type="hidden" id="originName" name="originName" />
                             </div>
                         </div>
                         
@@ -148,19 +143,14 @@
                             </button>
                         </div>
                         
-                        <!-- To (Destination) Field -->
                         <div class="mb-3">
                             <div class="location-label">Nereye</div>
                             <div class="field-with-icon">
                                 <i class="bi bi-geo-alt field-icon"></i>
                                 <input type="hidden" id="destinationSearchInput" name="SearchDestination" asp-for="SearchDestination" />
                                 <select id="destinationSelect" asp-for="DestinationId" class="search-select" style="width: 100%">
-                                    @if (Model.DestinationId.HasValue && !string.IsNullOrEmpty(Model.DestinationName))
-                                    {
-                                        <option value="@Model.DestinationId" selected>@Model.DestinationName</option>
-                                    }
                                 </select>
-                                <input type="hidden" id="destinationName" name="destinationName" value="@(Model.DestinationName ?? "")" />
+                                <input type="hidden" id="destinationName" name="destinationName" />
                                 <span asp-validation-for="DestinationId" class="text-danger"></span>
                             </div>
                         </div>
@@ -170,7 +160,7 @@
                             <div class="location-label">Tarih</div>
                             <div class="field-with-icon mb-2">
                                 <i class="bi bi-calendar-date field-icon"></i>
-                                <input asp-for="Date" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" style="padding-left: 35px;" />
+                                <input asp-for="Date" id="dateInput" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" value="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" style="padding-left: 35px;" />
                                 <span asp-validation-for="Date" class="text-danger"></span>
                             </div>
                             <div class="date-buttons">
@@ -210,9 +200,26 @@
             const savedDestinationName = localStorage.getItem('obilet_destinationName');
             const savedDate = localStorage.getItem('obilet_date');
             
-            // Set default date to today if not saved
+            // Check if the saved date is valid (not in the past)
             if (savedDate) {
-                $('#Date').val(savedDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Set to beginning of day for proper comparison
+                
+                const savedDateObj = new Date(savedDate);
+                
+                // If saved date is valid and not in the past, use it
+                if (savedDateObj >= today) {
+                    $('#dateInput').val(savedDate);
+                } else {
+                    // Otherwise, use tomorrow's date
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
+                    $('#dateInput').val(tomorrowFormatted);
+                    
+                    // Update localStorage with new valid date
+                    localStorage.setItem('obilet_date', tomorrowFormatted);
+                }
             }
             
             // Restore origin if saved
@@ -240,7 +247,7 @@
                     }
                 },
                 ajax: {
-                    url: '@Url.Action("SearchOriginLocations", "Home")',
+                    url: '@Url.Action("SearchBusLocations", "Home")',
                     dataType: 'json',
                     delay: 250,
                     data: function (params) {
@@ -276,7 +283,7 @@
                     }
                 },
                 ajax: {
-                    url: '@Url.Action("SearchDestinationLocations", "Home")',
+                    url: '@Url.Action("SearchBusLocations", "Home")',
                     dataType: 'json',
                     delay: 250,
                     data: function (params) {
@@ -340,15 +347,18 @@
             });
             
             // Save date when changed
-            $('#Date').change(function() {
+            $('#dateInput').change(function() {
                 localStorage.setItem('obilet_date', $(this).val());
             });
+            
+            // Trigger the change event to update localStorage
+            $('#dateInput').trigger('change');
             
             // Handle Today button click
             $('#todayBtn').click(function() {
                 const today = new Date();
                 const formattedDate = today.toISOString().split('T')[0];
-                $('#Date').val(formattedDate).trigger('change');
+                $('#dateInput').val(formattedDate).trigger('change');
             });
             
             // Handle Tomorrow button click
@@ -356,7 +366,7 @@
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 const formattedDate = tomorrow.toISOString().split('T')[0];
-                $('#Date').val(formattedDate).trigger('change');
+                $('#dateInput').val(formattedDate).trigger('change');
             });
 
             // Handle swap button click

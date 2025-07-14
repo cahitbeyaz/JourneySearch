@@ -27,91 +27,19 @@ public class HomeController : Controller
         _locationCacheService = locationCacheService;
     }
 
-    // Show search form with locations and saved preferences
-    public async Task<IActionResult> Index(string searchTerm = null)
+    public async Task<IActionResult> Index()
     {
         try
         {
-            // Get session from HttpContext (managed by middleware)
             var session = HttpContext.GetObiletSession();
             if (session == null)
             {
                 return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier, ErrorMessage = "Failed to create session with the server. Please try again later." });
             }
 
-            var model = new SearchViewModel();
-
-            // Display any TempData messages that might have been set from previous actions
-            if (TempData["ErrorMessage"] != null)
-            {
-                ViewBag.ErrorMessage = TempData["ErrorMessage"];
-            }
-
-            if (TempData["SuccessMessage"] != null)
-            {
-                ViewBag.SuccessMessage = TempData["SuccessMessage"];
-            }
-
-            // Get saved search preferences from the cookie if they exist
-            var savedPreferences = GetSearchPreferencesFromCookie();
-            if (savedPreferences != null)
-            {
-                model.OriginId = savedPreferences.OriginId;
-                model.OriginName = savedPreferences.OriginName;
-                model.DestinationId = savedPreferences.DestinationId;
-                model.DestinationName = savedPreferences.DestinationName;
-                model.Date = savedPreferences.Date;
-            }
-            else
-            {
-                // Default to tomorrow's date if no saved preferences
-                model.Date = DateTime.Now.AddDays(1).Date;
-            }
-
             //select2 makes Search request anyways, even if inital data is loaded. Therefore I have commented out below code until a further implementation
-            //try
-            //{
-            //    // Get bus locations from API - when searchTerm is null, API returns initial list
-            //    var locationsRequest = new BusLocationRequest
-            //    {
-            //        // Pass null data to get initial list of locations when searchTerm is null
-            //        Data = searchTerm,
-            //        DeviceSession = session,
-            //        Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-            //        Language = "tr-TR"
-            //    };
 
-            //    // Use cache for the initial location list (search is handled by dedicated AJAX endpoints)
-            //    _logger.LogInformation("Getting all locations from cache for initial load");
-            //    var locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
-
-            //    if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
-            //    {
-            //        // Create select list items for the dropdown
-            //        model.LocationOptions = locationsResponse.Data
-            //            .OrderBy(l => l.Rank ?? int.MaxValue)
-            //            .Select(l => new SelectListItem
-            //            {
-            //                Value = l.Id.ToString(),
-            //                Text = l.Name,
-            //                // Keep user preferences selected
-            //                Selected = (l.Id == model.OriginId || l.Id == model.DestinationId)
-            //            })
-            //            .ToList();
-
-            //        _logger.LogInformation("Loaded {Count} locations for search form", model.LocationOptions.Count);
-            //    }
-            //    else
-            //    {
-            //        ViewBag.ErrorMessage = $"Failed to retrieve bus locations: {locationsResponse.Message ?? "Unknown error"}";
-            //    }
-            //}
-            //catch (Exception)
-            //{
-            //    ViewBag.ErrorMessage = "An error occurred while retrieving bus locations. Please try again later.";
-            //}
-
-            return View(model);
+            return View();
         }
         catch (Exception)
         {
@@ -119,7 +47,6 @@ public class HomeController : Controller
         }
     }
 
-    // Process search form and redirect to journey results
     [HttpPost]
     public async Task<IActionResult> Search(SearchViewModel model)
     {
@@ -127,30 +54,22 @@ public class HomeController : Controller
         {
             if (!ModelState.IsValid)
             {
-                // Keep the model and re-populate the locations
                 ViewBag.ErrorMessage = "Please fill in all required fields.";
-                await PopulateLocationsInModel(model);
                 return View("Index", model);
             }
 
             if (model.OriginId == model.DestinationId)
             {
                 ViewBag.ErrorMessage = "Origin and destination cannot be the same location.";
-                await PopulateLocationsInModel(model);
                 return View("Index", model);
             }
 
             if (model.Date < DateTime.Now.Date)
             {
                 ViewBag.ErrorMessage = "Departure date cannot be in the past.";
-                await PopulateLocationsInModel(model);
                 return View("Index", model);
             }
 
-            // Save search preferences to cookie
-            SaveSearchPreferencesToCookie(model);
-
-            // Redirect to the Journey controller's Index action with the search parameters
             return RedirectToAction("Index", "Journey", new
             {
                 originId = model.OriginId,
@@ -161,59 +80,12 @@ public class HomeController : Controller
         catch (Exception)
         {
             ViewBag.ErrorMessage = "An error occurred while processing your search request.";
-            await PopulateLocationsInModel(model);
             return View("Index", model);
         }
     }
 
-    // Swap origin and destination locations
-    [HttpPost]
-    public IActionResult SwapLocations(SearchViewModel model)
-    {
-        // Swap origin and destination
-        var tempId = model.OriginId;
-        var tempName = model.OriginName;
-
-        model.OriginId = model.DestinationId;
-        model.OriginName = model.DestinationName;
-
-        model.DestinationId = tempId;
-        model.DestinationName = tempName;
-
-        // Update cookie with the new preferences
-        SaveSearchPreferencesToCookie(model);
-
-        TempData["SuccessMessage"] = "Origin and destination locations have been swapped.";
-        return RedirectToAction(nameof(Index));
-    }
-
-
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error(int? code = null)
-    {
-        // Use the provided code or default to 500 (Internal Server Error)
-        var statusCode = code ?? 500;
-
-        if (statusCode == 0)
-        {
-            // Default to 500 if no status code is specified
-            statusCode = 500;
-        }
-
-        Response.StatusCode = statusCode;
-
-        return View(new ErrorViewModel
-        {
-            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-            StatusCode = statusCode,
-            // ErrorMessage will be set in the view based on status code if not provided
-            ErrorMessage = TempData["ErrorMessage"]?.ToString()
-        });
-    }
-
-    // Search for bus locations by text for origin field
     [HttpGet]
-    public async Task<IActionResult> SearchOriginLocations(string searchTerm)
+    public async Task<IActionResult> SearchBusLocations(string searchTerm)
     {
         try
         {
@@ -254,115 +126,26 @@ public class HomeController : Controller
         }
     }
 
-    // Search for bus locations by text for destination field
-    [HttpGet]
-    public async Task<IActionResult> SearchDestinationLocations(string searchTerm)
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error(int? code = null)
     {
-        try
+        // Use the provided code or default to 500 (Internal Server Error)
+        var statusCode = code ?? 500;
+
+        if (statusCode == 0)
         {
-            var session = HttpContext.GetObiletSession();
-            if (session == null)
-            {
-                return Json(new { success = false, message = "Failed to create session with the server." });
-            }
-
-            var locationsRequest = new BusLocationRequest
-            {
-                Data = searchTerm,
-                DeviceSession = session,
-                Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                Language = "tr-TR"
-            };
-
-            var locationsResponse = await _apiClient.GetBusLocationsAsync(locationsRequest);
-
-            if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
-            {
-                var locations = locationsResponse.Data
-                    .OrderBy(l => l.Rank ?? int.MaxValue)
-                    .Select(l => new { id = l.Id, text = l.Name })
-                    .ToList();
-
-                return Json(new { success = true, results = locations });
-            }
-            else
-            {
-                return Json(new { success = false, message = locationsResponse.UserMessage ?? locationsResponse.Message ?? "An error occurred while searching locations." });
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error searching for destination locations");
-            return Json(new { success = false, message = "An error occurred while searching for locations." });
-        }
-    }
-
-    // Populate location options in the search view model
-    private async Task PopulateLocationsInModel(SearchViewModel model)
-    {
-        // Get session from HttpContext (managed by middleware)
-        var session = HttpContext.GetObiletSession();
-        if (session == null)
-        {
-            return;
+            // Default to 500 if no status code is specified
+            statusCode = 500;
         }
 
-        var locationsRequest = new BusLocationRequest
+        Response.StatusCode = statusCode;
+
+        return View(new ErrorViewModel
         {
-            DeviceSession = session,
-            Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-            Language = "tr-TR"
-        };
-
-        // Use location cache service instead of directly calling the API
-        _logger.LogInformation("Attempting to get locations from cache");
-        var locationsResponse = await _locationCacheService.GetAllLocationsAsync(locationsRequest);
-
-        if (locationsResponse.Status == "Success" && locationsResponse.Data != null)
-        {
-            // Create select list items for the dropdown
-            model.LocationOptions = locationsResponse.Data
-                .OrderBy(l => l.Rank ?? int.MaxValue)
-                .Select(l => new SelectListItem
-                {
-                    Value = l.Id.ToString(),
-                    Text = l.Name
-                })
-                .ToList();
-            
-            _logger.LogInformation("Successfully populated {LocationCount} locations in model", model.LocationOptions?.Count ?? 0);
-        }
-    }
-
-    private void SaveSearchPreferencesToCookie(SearchViewModel model)
-    {
-        var options = new CookieOptions
-        {
-            Expires = DateTime.Now.AddDays(30),
-            IsEssential = true,
-            HttpOnly = true,
-            SameSite = SameSiteMode.Lax
-        };
-
-        var preferences = System.Text.Json.JsonSerializer.Serialize(model);
-        Response.Cookies.Append(SearchPreferencesCookieKey, preferences, options);
-    }
-
-    private SearchViewModel GetSearchPreferencesFromCookie()
-    {
-        try
-        {
-            var preferencesJson = Request.Cookies[SearchPreferencesCookieKey];
-            if (!string.IsNullOrEmpty(preferencesJson))
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<SearchViewModel>(preferencesJson);
-            }
-        }
-        catch
-        {
-            Response.Cookies.Delete(SearchPreferencesCookieKey);
-        }
-
-        return null;
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+            StatusCode = statusCode,
+            // ErrorMessage will be set in the view based on status code if not provided
+            ErrorMessage = TempData["ErrorMessage"]?.ToString()
+        });
     }
 }
