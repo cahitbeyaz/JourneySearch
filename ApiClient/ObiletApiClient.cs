@@ -12,14 +12,12 @@ namespace ObiletJourneySearch.ApiClient
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly ILogger<ObiletApiClient> _logger;
 
-        public ObiletApiClient(ILogger<ObiletApiClient> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-        public ObiletApiClient(HttpClient httpClient, IConfiguration configuration)
+        public ObiletApiClient(HttpClient httpClient, IConfiguration configuration, ILogger<ObiletApiClient> logger)
         {
             _httpClient = httpClient;
             _apiClientToken = configuration["ObiletApi:ApiClientToken"];
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             _logger.LogInformation("ObiletApiClient initialized with token: {Token}", _apiClientToken);
             // Configure base address and default headers
             _httpClient.BaseAddress = new Uri("https://v2-api.obilet.com/api/");
