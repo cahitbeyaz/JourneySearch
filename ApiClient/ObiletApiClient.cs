@@ -10,12 +10,17 @@ namespace ObiletJourneySearch.ApiClient
         private readonly HttpClient _httpClient;
         private readonly string _apiClientToken;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly ILogger<ObiletApiClient> _logger;
 
+        public ObiletApiClient(ILogger<ObiletApiClient> logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
         public ObiletApiClient(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _apiClientToken = configuration["ObiletApi:ApiClientToken"];
-            
+            _logger.LogInformation("ObiletApiClient initialized with token: {Token}", _apiClientToken);
             // Configure base address and default headers
             _httpClient.BaseAddress = new Uri("https://v2-api.obilet.com/api/");
             _httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -51,15 +56,15 @@ namespace ObiletJourneySearch.ApiClient
             {
                 var json = JsonSerializer.Serialize(request, _jsonOptions);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
+
                 var response = await _httpClient.PostAsync(endpoint, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
-                
+
                 // Check for HTTP errors but don't throw
-                
-                var result = JsonSerializer.Deserialize<TResponse>(responseContent, 
+
+                var result = JsonSerializer.Deserialize<TResponse>(responseContent,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    
+
                 return result;
             }
             catch
