@@ -25,13 +25,6 @@ namespace ObiletJourneySearch.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Skip session creation for static files and error pages
-            if (!RequiresSession(context.Request.Path))
-            {
-                await _next(context);
-                return;
-            }
-
             try
             {
                 // Try to get an existing session from HTTP context
@@ -60,12 +53,6 @@ namespace ObiletJourneySearch.Middleware
             // Continue with the request pipeline
             await _next(context);
         }
-
-        private bool RequiresSession(PathString path)
-        {
-            return RequestPathHelper.RequiresSession(path);
-        }
-
         private DeviceSession GetSessionFromContext(HttpContext context)
         {
             if (context.Session.TryGetValue(SessionKey, out byte[] sessionData))
