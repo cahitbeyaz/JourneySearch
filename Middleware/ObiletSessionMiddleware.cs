@@ -11,8 +11,9 @@ namespace ObiletJourneySearch.Middleware
         private readonly RequestDelegate _next;
         private readonly IObiletApiClient _apiClient;
         private readonly ILogger<ObiletSessionMiddleware> _logger;
-        private const string SessionKey = "ObiletDeviceSession";
-
+        public const string ObiletSessionKey = "ObiletDeviceSession";
+        private const string ObDeviceIdCookiKey = "ob_deviceId";
+        private const string ObSessionKeyCookiKey = "ob_sessionKey";
         public ObiletSessionMiddleware(
             RequestDelegate next,
             IObiletApiClient apiClient,
@@ -27,47 +28,45 @@ namespace ObiletJourneySearch.Middleware
         {
             try
             {
-                // Try to get an existing session from HTTP context
-                var session = GetSessionFromContext(context);
-
-                // If no session exists, create a new one
+                var session = GetSession(context);
                 if (session == null)
                 {
-                    // Create new session using injected API client
                     session = await CreateNewSessionAsync(context);
+                    TimeSpan sessionExpireTimeSpan = TimeSpan.FromDays(1);
+                    var cookieOpts = new CookieOptions
+                    {
+                        Expires = DateTimeOffset.UtcNow.Add(sessionExpireTimeSpan),
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict
+                    };
+                    context.Response.Cookies.Append(ObDeviceIdCookiKey, session.DeviceId, cookieOpts);
+                    context.Response.Cookies.Append(ObSessionKeyCookiKey, session.SessionId, cookieOpts);
                 }
-
-                if (session != null)
-                {
-                    // Store session in HttpContext.Items for easy access in controllers
-                    context.Items["ObiletSession"] = session;
-                }
+                context.Items[ObiletSessionKey] = session;
             }
             catch (Exception ex)
             {
-                // Log the error but continue with the request pipeline
-                // This ensures error pages work even if session creation fails
                 _logger.LogError(ex, "Failed to create or retrieve Obilet session");
             }
 
             // Continue with the request pipeline
             await _next(context);
         }
-        private DeviceSession GetSessionFromContext(HttpContext context)
+        private DeviceSession? GetSession(HttpContext context)
         {
-            if (context.Session.TryGetValue(SessionKey, out byte[] sessionData))
+
+            string obDeviceId = context.Request.Cookies[ObDeviceIdCookiKey];
+            string obSessionKey = context.Request.Cookies[ObSessionKeyCookiKey];
+            if (!string.IsNullOrEmpty(obDeviceId) && !string.IsNullOrEmpty(obSessionKey))
             {
-                try
+                return new DeviceSession
                 {
-                    var sessionJson = System.Text.Encoding.UTF8.GetString(sessionData);
-                    return JsonSerializer.Deserialize<DeviceSession>(sessionJson);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error deserializing session data");
-                }
+                    DeviceId = obDeviceId,
+                    SessionId = obSessionKey
+                };
             }
-            
+
             return null;
         }
 
@@ -87,7 +86,7 @@ namespace ObiletJourneySearch.Middleware
                 };
 
                 var response = await _apiClient.GetSessionAsync(sessionRequest);
-                
+
                 if (response.Status == "Success" && response.Data != null)
                 {
                     var session = new DeviceSession
@@ -95,16 +94,13 @@ namespace ObiletJourneySearch.Middleware
                         SessionId = response.Data.SessionId,
                         DeviceId = response.Data.DeviceId
                     };
-                    
-                    // Store the session in HTTP context
-                    StoreSession(context, session);
-                    
+
                     _logger.LogInformation("Created new session with ID: {SessionId}", session.SessionId);
                     return session;
                 }
                 else
                 {
-                    _logger.LogError("Failed to create session. Status: {Status}, Message: {Message}", 
+                    _logger.LogError("Failed to create session. Status: {Status}, Message: {Message}",
                         response.Status, response.Message);
                 }
             }
@@ -112,15 +108,8 @@ namespace ObiletJourneySearch.Middleware
             {
                 _logger.LogError(ex, "Error creating session");
             }
-            
-            return null;
-        }
 
-        private void StoreSession(HttpContext context, DeviceSession session)
-        {
-            var sessionJson = JsonSerializer.Serialize(session);
-            var sessionData = System.Text.Encoding.UTF8.GetBytes(sessionJson);
-            context.Session.Set(SessionKey, sessionData);
+            return null;
         }
 
         private Browser GetBrowserInfo(HttpContext context)

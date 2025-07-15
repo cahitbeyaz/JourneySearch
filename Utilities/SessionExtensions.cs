@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using ObiletJourneySearch.Middleware;
 using ObiletJourneySearch.Models.DTOs;
 
 namespace ObiletJourneySearch.Utilities
@@ -7,7 +8,7 @@ namespace ObiletJourneySearch.Utilities
     {
         public static DeviceSession GetObiletSession(this HttpContext context)
         {
-            if (context.Items.TryGetValue("ObiletSession", out var sessionObj) && sessionObj is DeviceSession session)
+            if (context.Items.TryGetValue(ObiletSessionMiddleware.ObiletSessionKey, out var sessionObj) && sessionObj is DeviceSession session)
             {
                 return session;
             }

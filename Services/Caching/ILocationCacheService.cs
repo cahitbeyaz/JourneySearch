@@ -5,6 +5,5 @@ namespace ObiletJourneySearch.Services.Caching
     public interface ILocationCacheService
     {
         Task<BusLocationResponse> GetAllLocationsAsync(BusLocationRequest request);
-        void InvalidateLocationsCache();
     }
 }

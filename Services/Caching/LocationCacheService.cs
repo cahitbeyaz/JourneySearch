@@ -34,11 +34,5 @@ namespace ObiletJourneySearch.Services.Caching
                 },
                 DefaultLocationCacheDuration);
         }
-
-        public void InvalidateLocationsCache()
-        {
-            _logger.LogInformation("Invalidating bus locations cache");
-            _cacheService.Remove(LocationCacheKey);
-        }
     }
 }
