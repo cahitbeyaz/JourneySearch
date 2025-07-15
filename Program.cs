@@ -43,8 +43,6 @@ app.UseRouting();
 
 app.UseObiletSession();
 
-app.UseAuthorization();
-
 app.MapStaticAssets();
 
 app.MapControllerRoute(
