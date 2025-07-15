@@ -11,18 +11,9 @@ namespace ObiletJourneySearch.ApiClient
         private readonly string _apiClientToken;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public ObiletApiClient(HttpClient httpClient, IConfiguration configuration)
+        public ObiletApiClient(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _apiClientToken = configuration["ObiletApi:ApiClientToken"];
-
-            // Configure base address and default headers
-            _httpClient.BaseAddress = new Uri("https://v2-api.obilet.com/api/");
-            _httpClient.DefaultRequestHeaders.Accept.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", _apiClientToken);
-
-            // Configure JSON serialization options
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
